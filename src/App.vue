@@ -6,7 +6,7 @@
       </transition>
     </router-view>
   </main>
-  <TheNavbar />
+  <TheNavbar v-if="!$route.meta.hideNavbar" />
 </template>
 
 <script setup>

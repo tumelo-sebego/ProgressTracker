@@ -1,0 +1,91 @@
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { db } from '../db/schema';
+
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref(JSON.parse(localStorage.getItem('user')) || null);
+  const onboardingData = ref({
+    goal: { title: '', duration: 1, frequency: 'Daily' }, // Defaults
+    activities: []
+  });
+  const viewingGoalId = ref(null); // ID of goal being viewed (if null, viewing current active)
+  const router = useRouter();
+
+  function login(username) {
+    user.value = { name: username };
+    localStorage.setItem('user', JSON.stringify(user.value));
+  }
+
+  function logout() {
+    user.value = null;
+    localStorage.removeItem('user');
+    // Router redirect handled in component or global guard usually, but good to have state clear here
+  }
+
+  function setGoalData(data) {
+    onboardingData.value.goal = { ...onboardingData.value.goal, ...data };
+  }
+
+  function addActivity(activity) {
+    onboardingData.value.activities.push(activity);
+  }
+
+  function removeActivity(index) {
+    onboardingData.value.activities.splice(index, 1);
+  }
+
+  async function finishOnboarding() {
+    try {
+        // Save Goal
+        const goalId = await db.goals.add({
+            title: onboardingData.value.goal.title,
+            duration: onboardingData.value.goal.duration,
+            frequency: onboardingData.value.goal.frequency,
+            status: 'active',
+            startDate: new Date(),
+            createdAt: new Date()
+        });
+
+        // Save Activities
+        const activitiesToSave = onboardingData.value.activities.map(act => ({
+            goalId: goalId,
+            title: act.title,
+            points: act.points,
+            status: 'pending' // Default status
+        }));
+        
+        await db.activities.bulkAdd(activitiesToSave);
+
+        // Reset Onboarding Data
+        onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily' }, activities: [] };
+        
+        return true;
+    } catch (error) {
+        console.error("Failed to save onboarding data:", error);
+        return false;
+    }
+  }
+
+  function setViewingGoal(id) {
+    viewingGoalId.value = id;
+  }
+
+  function clearViewingGoal() {
+    viewingGoalId.value = null;
+  }
+
+  return { 
+    user, 
+    onboardingData, 
+    viewingGoalId,
+    login, 
+    logout, 
+    setGoalData, 
+    addActivity, 
+    removeActivity,
+    finishOnboarding,
+    setViewingGoal,
+    clearViewingGoal
+  };
+});
