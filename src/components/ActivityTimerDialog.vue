@@ -37,7 +37,7 @@
          <div class="status-summary">
              <div class="info-left">
                  <span class="status-dot" :class="statusClass"></span>
-                 <span>{{ statusText }}</span>
+                 <span :class="statusClass" class="status-text">{{ statusText }}</span>
              </div>
          </div>
 
@@ -301,6 +301,11 @@ header {
 .status-dot.done { 
     background-color: var(--primary-color); 
 }
+
+/* Status Text Colors */
+.status-text.pending { color: #3498db; }
+.status-text.active { color: #9b59b6; }
+.status-text.done { color: var(--primary-color); }
 
 /* Actions */
 .actions {
