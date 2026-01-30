@@ -58,19 +58,24 @@ const links = [
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #1a1a1a; /* Dark Background */
-  padding: 8px 8px; /* Compact padding */
-  border-radius: 99px;
+  background-color: #1a1a1a; 
+  padding: 8px 12px; /* Slightly more side padding */
+  border-radius: 24px; /* Less rounded to match wide feel? Or keep 99px for pill shape. User image usually high border radius. Keeping 99px is safer for 'pill'. But 20px matches cards? Let's stick to 24px or 30px to look like a bar */
+  border-radius: 99px; /* Sticking to pill shape as requested "navigation component should also look like the one in the image" */
   box-shadow: 0 10px 25px rgba(0,0,0,0.3);
   z-index: 100;
   display: flex;
   align-items: center;
+  width: calc(100% - 48px); /* Match HomeView padding: 24px left + 24px right */
+  max-width: 552px; /* 600px - 48px */
+  box-sizing: border-box;
 }
 
 .nav-container {
   display: flex;
-  
-  gap: 8px;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .nav-item {
