@@ -29,24 +29,15 @@
             @click="openActivity(activity)"
         />
     </div>
-
-    <ActivityTimerDialog
-        v-if="selectedActivity"
-        :activity="selectedActivity"
-        :start-time="selectedActivity.startTime"
-        @close="closeDialog"
-        @start="startActivity"
-        @finish="finishActivity"
-    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/authStore';
+import { useActivityStore } from '../stores/activityStore';
 import CircularProgress from '../components/CircularProgress.vue';
 import ActivityCard from '../components/ActivityCard.vue';
-import ActivityTimerDialog from '../components/ActivityTimerDialog.vue';
 import ArchiveBanner from '../components/ArchiveBanner.vue';
 import { db } from '../db/schema';
 import { liveQuery } from 'dexie';

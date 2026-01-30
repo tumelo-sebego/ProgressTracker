@@ -1,5 +1,5 @@
 <template>
-  <div class="overlay">
+  <div class="dialog-container">
     <div class="dialog">
         <header>
              <button class="close-btn" @click="close">×</button>
@@ -176,6 +176,7 @@ const finish = async () => {
 };
 </script>
 
+<style scoped>
 /* Full Screen Dialog Styles */
 .dialog-container {
     position: fixed;
@@ -297,6 +298,7 @@ header {
     color: inherit;
 }
 
+/* Status dots */
 .status-dot {
     width: 18px; 
     height: 18px;
@@ -335,4 +337,4 @@ header {
 .btn-primary.close-action {
     background-color: var(--text-color); 
 }
-
+</style>
