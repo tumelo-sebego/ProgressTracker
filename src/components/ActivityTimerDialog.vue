@@ -52,19 +52,24 @@
 
 <script setup>
 import { ref, computed, onUnmounted, onMounted } from 'vue';
+import { useActivityStore } from '../stores/activityStore'; 
 
+// We accept activity as prop from App.vue (state from store passed down)
 const props = defineProps({
-  activity: Object,
-  startTime: Number // If passed, implies it's already running
+  activity: Object
 });
 
-const emit = defineEmits(['close', 'start', 'finish']);
+const store = useActivityStore();
+// No emits needed if calling store directly? 
+// Or emit 'close' so App.vue can handle it?
+// App.vue listens to @close="store.closeActivity()".
+const emit = defineEmits(['close']);
 
 const timerInterval = ref(null);
 const elapsedSeconds = ref(0);
-const isActive = ref(false);
 
-const isDone = computed(() => props.activity.status === 'done');
+const isActive = computed(() => props.activity?.status === 'active');
+const isDone = computed(() => props.activity?.status === 'done');
 
 const statusClass = computed(() => {
     if (isDone.value) return 'done';
@@ -79,21 +84,14 @@ const statusText = computed(() => {
 });
 
 const formattedTime = computed(() => {
-    // If done, show duration from prop or calculated? 
-    // If done, timer usually static or hidden? Design shows timer in done state?
-    // Image shows 00:15:25 on a DONE card? Or active?
-    // Actually the image "20min Meditation" has a timer "00:15:25" and status "Done" at bottom?
-    // Wait, the status summary says "Done" in the green pill.
-    // So YES, show final timer value.
-    
     let seconds = elapsedSeconds.value;
-    if (isDone.value && props.activity.duration) {
-         // If duration is in minutes, convert to seconds? 
-         // But we assume precision? Or just show duration.
-         // Actually if we just finished, we have seconds.
-         // If re-opened, we might only have minutes (duration).
-         // Let's rely on props.activity.duration (min) * 60 if clean load.
-         if (seconds === 0) seconds = props.activity.duration * 60; 
+    // If just opened and active, we need to sync with startTime
+    // If just opened and done, sync with duration
+    const act = props.activity;
+    if (!act) return "00:00:00";
+    
+    if (isDone.value && act.duration) {
+         if (seconds === 0) seconds = act.duration * 60; 
     }
 
     const h = Math.floor(seconds / 3600);
@@ -103,14 +101,12 @@ const formattedTime = computed(() => {
 });
 
 const formattedDate = computed(() => {
-    if (!props.activity.completedAt) return 'Today'; // Fallback
+    if (!props.activity?.completedAt) return 'Today';
     const date = new Date(props.activity.completedAt);
     const d = date.getDate();
     const m = date.toLocaleDateString('en-GB', { month: 'long' });
     
-    // Suffix logic (st, nd, rd, th)
-    const j = d % 10,
-        k = d % 100;
+    const j = d % 10, k = d % 100;
     let suffix = "th";
     if (j == 1 && k != 11) suffix = "st";
     else if (j == 2 && k != 12) suffix = "nd";
@@ -120,93 +116,101 @@ const formattedDate = computed(() => {
 });
 
 const formattedTimeRange = computed(() => {
-    if (!props.activity.startedAt || !props.activity.completedAt) return '00:00 - 00:00';
-    
+    if (!props.activity?.startedAt || !props.activity?.completedAt) return '00:00 - 00:00';
     const format = (ts) => {
         const d = new Date(ts);
         return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
     };
-    
     return `${format(props.activity.startedAt)} - ${format(props.activity.completedAt)}`; 
 });
 
 const startTimerTick = () => {
+    if (timerInterval.value) clearInterval(timerInterval.value);
     timerInterval.value = setInterval(() => {
         elapsedSeconds.value++;
     }, 1000);
 };
 
-onMounted(() => {
-    if (props.startTime) {
-        isActive.value = true;
+const syncTimer = () => {
+    const act = props.activity;
+    if (act?.startTime) {
         const now = Date.now();
-        elapsedSeconds.value = Math.floor((now - props.startTime) / 1000);
+        elapsedSeconds.value = Math.floor((now - act.startTime) / 1000);
         startTimerTick();
-    } else if (isDone.value && props.activity.duration) {
-        // Init elapsed seconds for display
-        elapsedSeconds.value = props.activity.duration * 60; 
+    } else if (act?.status === 'done' && act.duration) {
+         elapsedSeconds.value = act.duration * 60; 
+         if (timerInterval.value) clearInterval(timerInterval.value);
+    } else {
+        elapsedSeconds.value = 0;
+        if (timerInterval.value) clearInterval(timerInterval.value);
     }
+}
+
+onMounted(() => {
+    syncTimer();
 });
 
+// Watch for activity changes (if store updates ref)
+import { watch } from 'vue';
+watch(() => props.activity, () => {
+    syncTimer();
+}, { deep: true });
+
 onUnmounted(() => {
-    clearInterval(timerInterval.value);
+    if (timerInterval.value) clearInterval(timerInterval.value);
 });
 
 const close = () => {
     emit('close');
 };
 
-const start = () => {
-    isActive.value = true;
-    startTimerTick();
-    emit('start', props.activity.id);
+const start = async () => {
+    await store.startActivity();
+    // syncTimer auto runs via watcher
 };
 
-const finish = () => {
-    clearInterval(timerInterval.value);
-    emit('finish', props.activity.id);
-    // Local update to done state immediately? 
-    // Parent handles DB update which triggers reactivity if using liveQuery?
-    // But selectedActivity might be a detached object reference or updated by parent.
-    // Parent wrapper does: selectedActivity.value = updated.
+const finish = async () => {
+    await store.finishActivity();
+    if (timerInterval.value) clearInterval(timerInterval.value);
+    // User stays on dialog to see done state
 };
 </script>
 
-<style scoped>
-.overlay {
+/* Full Screen Dialog Styles */
+.dialog-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    background: transparent; /* Wrapper */
     display: flex;
     justify-content: center;
-    align-items: center; /* Center horizontally and vertically */
-    z-index: 1000;
+    align-items: flex-end; /* Or stretch */
 }
 
 .dialog {
-    background: #f8faed;
-    width: calc(100% - 32px); /* Fill screen with margin */
-    height: calc(100% - 64px); /* Vertical margin */
-    max-width: 480px; /* Max constraint */
-    max-height: 800px;
-    border-radius: 40px; /* Larger radius as per image */
+    background: #f8faed; /* Opaque bg */
+    width: 100%;
+    height: 100%;
+    /* border-radius: 0;  Fill screen usually means no radius at top if full height? Or maybe rounded top like a sheet? User: "fill the entire space". I will use 0 radius or small radius if it feels like a card. User said "until it reaches the top of the screen". Usually implies full coverage. Let's stick to full rect or very top rounded. */
+    border-radius: 0; 
     padding: 32px;
     display: flex;
     flex-direction: column;
     align-items: center;
     box-sizing: border-box;
-    position: relative;
-    /* animation: slideUp 0.3s ease-out;  Maybe fade/scale is better for center card */
+    overflow-y: auto; /* Scrollable if needed */
 }
 
+/* Header/Close */
 header {
     width: 100%;
     display: flex;
     justify-content: flex-start;
     margin-bottom: 20px;
+    padding-top: 20px; /* Safe area */
 }
 
 .close-btn {
@@ -222,7 +226,7 @@ header {
 .activity-title {
     font-size: 28px;
     font-weight: 700;
-    margin-bottom: 60px; /* More space */
+    margin-bottom: 60px;
     text-align: center;
     width: 100%;
 }
@@ -237,26 +241,16 @@ header {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 42px; /* Bigger font */
+    font-size: 42px; 
     font-weight: 700;
     color: #1a1a1a;
     font-feature-settings: "tnum";
-    margin-bottom: auto; /* Push content down? Or space evenly? */
+    margin-bottom: auto; 
 }
 
-/* Push details to bottom */
+/* Info Rows */
 .info-row {
-    background: var(--bg-color); /* Matches page/requested bg - actually user said bg of button is primary... wait. "background color of all row classes is --bg-color" - Done. */
-    /* Wait, checking user request: "bg of all row classes is --bg-color" (from prev PROMPT). 
-       Current PROMPT: "bg of the button is --primary-color, when clicked its bg changes to --text-color" */
-    
-    background: #eaeed3; /* Using secondary darker shade for rows as seen in image? 
-                          User said "--bg-color" in prev prompt. 
-                          Let's stick to what looks like the image: Greyish pill. #eaeed3 is standard card bg. 
-                          The image has greyish rows. #e6e7e9 was set as bg-color by user in Step 76.
-                          So var(--bg-color) is correct. */
-    background-color: #E6E7E9; /* Explicitly ensure it matches if var is used */
-    
+    background: #E6E7E9;
     padding: 18px 24px;
     border-radius: 99px;
     display: flex;
@@ -277,11 +271,11 @@ header {
 }
 
 .divider { 
-    color: #1a1a1a; /* Darker divider */
+    color: #1a1a1a; 
     font-weight: 300;
     font-size: 20px;
     opacity: 0.3;
-    margin: 0 8px; /* More space around line */
+    margin: 0 8px; 
 }
 
 .status-summary {
@@ -296,16 +290,15 @@ header {
     margin-bottom: 24px;
     width: 100%;
     box-sizing: border-box;
-    color: #5BA874; /* Text color green if done? Image shows "Done" in Green Text with Green Dot? */
+    color: #5BA874; 
 }
 
 .status-summary .info-left {
     color: inherit;
 }
 
-/* Status dots */
 .status-dot {
-    width: 18px; /* Bigger dot */
+    width: 18px; 
     height: 18px;
     border-radius: 50%;
     display: inline-block;
@@ -316,9 +309,10 @@ header {
     background-color: var(--primary-color); 
 }
 
-/* Button */
+/* Actions */
 .actions {
     width: 100%;
+    padding-bottom: 40px; /* Bottom padding */
 }
 
 .btn-primary {
@@ -330,17 +324,15 @@ header {
     border: none;
     cursor: pointer;
     transition: background-color 0.2s;
-    /* Default Primary */
     background-color: var(--primary-color);
-    color: #fff; /* White text on green button? */
+    color: #fff; 
 }
 
 .btn-primary:active, .btn-primary:focus {
-    background-color: var(--text-color); /* Change to text color (dark) on click */
+    background-color: var(--text-color); 
 }
 
-/* Close action style (if viewing done) */
 .btn-primary.close-action {
-    background-color: var(--text-color); /* Maybe dark for close? */
+    background-color: var(--text-color); 
 }
-</style>
+

@@ -52,6 +52,7 @@ import { db } from '../db/schema';
 import { liveQuery } from 'dexie';
 
 const authStore = useAuthStore();
+const activityStore = useActivityStore(); // Global store
 const userName = computed(() => authStore.user?.name?.split(' ')[0] || 'User'); 
 
 const formattedDate = computed(() => {
@@ -63,8 +64,8 @@ const formattedDate = computed(() => {
 });
 
 const activities = ref([]);
-const selectedActivity = ref(null);
 
+// We can still compute active ID for enabling/disabling if needed
 const currentActiveId = computed(() => {
     const active = activities.value.find(a => a.status === 'active');
     return active ? active.id : null;
@@ -106,59 +107,10 @@ const isInteractionDisabled = (activity) => {
 const openActivity = (activity) => {
     if (authStore.viewingGoalId) return; 
 
-    if (!currentActiveId.value || currentActiveId.value === activity.id) {
-         selectedActivity.value = activity;
+    // Open via global store
+    if (!currentActiveId.value || currentActiveId.value === activity.id || activity.status === 'done') {
+         activityStore.openActivity(activity);
     }
-};
-
-const closeDialog = () => {
-    selectedActivity.value = null;
-};
-
-const startActivity = async (id) => {
-    const now = Date.now();
-    await db.activities.update(id, { 
-        status: 'active',
-        startTime: now,
-        startedAt: now // Persist start time for history
-    });
-    const updated = await db.activities.get(id);
-    selectedActivity.value = updated;
-};
-
-const finishActivity = async (id) => {
-    const activity = activities.value.find(a => a.id === id);
-    let durationVal = 0;
-    const now = Date.now();
-    
-    if (activity && activity.startTime) {
-        const diff = now - activity.startTime;
-        durationVal = Math.round(diff / 60000); // Minutes
-        if (durationVal < 1) durationVal = 1; // Minimum 1 min
-    } else {
-        durationVal = activity.points || 0; 
-    }
-
-    await db.activities.update(id, { 
-        status: 'done',
-        startTime: null, // Clear active timer
-        completedAt: now, // Persist completion time
-        duration: durationVal
-    });
-    // Update selectedActivity to close dialog with correct state or null?
-    // User flow: "when an Activity has been completed... there's another row that should appear...".
-    // Does the dialog CLOSE or stay OPEN? 
-    // Usually clicking "Finish" closes it. 
-    // BUT the user says: "in a done state, there's another row that should appear...". 
-    // This implies they can VIEW the dialog for a DONE activity.
-    // So we should Update local state, then let user close it.
-    
-    // selectedActivity.value = null; // Don't nullify immediately if we want to show 'Done' state in dialog?
-    // Wait, usually flow is Finish -> Close. User can re-open from Home list.
-    // If I close it, they can reopen it to see the "Done" state.
-    // Let's close it for now as per previous logic, but ensure 'completedAt' is saved.
-    
-    selectedActivity.value = null; 
 };
 
 const exitArchive = () => {
