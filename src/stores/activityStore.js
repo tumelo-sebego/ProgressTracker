@@ -1,10 +1,18 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { db } from '../db/schema';
+import { liveQuery } from 'dexie';
 
 export const useActivityStore = defineStore('activity', () => {
     const currentActivity = ref(null);
     const isOpen = ref(false);
+    const isAnyRunning = ref(false);
+
+    // Watch for any active activity
+    liveQuery(() => db.activities.where('status').equals('active').count())
+        .subscribe(count => {
+            isAnyRunning.value = count > 0;
+        });
 
     function openActivity(activity) {
         currentActivity.value = activity;
@@ -67,6 +75,7 @@ export const useActivityStore = defineStore('activity', () => {
     return {
         currentActivity,
         isOpen,
+        isAnyRunning,
         openActivity,
         closeActivity,
         startActivity,

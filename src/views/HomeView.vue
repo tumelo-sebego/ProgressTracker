@@ -91,17 +91,11 @@ const subscription = liveQuery(async () => {
 });
 
 const isInteractionDisabled = (activity) => {
-    if (authStore.viewingGoalId) return true;
-    return currentActiveId.value !== null && currentActiveId.value !== activity.id;
+    return false;
 };
 
 const openActivity = (activity) => {
-    if (authStore.viewingGoalId) return; 
-
-    // Open via global store
-    if (!currentActiveId.value || currentActiveId.value === activity.id || activity.status === 'done') {
-         activityStore.openActivity(activity);
-    }
+    activityStore.openActivity(activity);
 };
 
 const exitArchive = () => {

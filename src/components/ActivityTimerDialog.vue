@@ -41,8 +41,8 @@
              </div>
          </div>
 
-         <div class="actions" v-if="!isDone">
-             <button v-if="!isActive" @click="start" class="btn-primary start">Start</button>
+         <div class="actions" v-if="!isDone && !isExpired">
+             <button v-if="!isActive" @click="start" :disabled="store.isAnyRunning" class="btn-primary start">Start</button>
              <button v-else @click="finish" class="btn-primary finish">Finish</button>
          </div>
     </div>
@@ -66,6 +66,7 @@ const elapsedSeconds = ref(0);
 
 const isActive = computed(() => props.activity?.status === 'active');
 const isDone = computed(() => props.activity?.status === 'done');
+const isExpired = computed(() => props.activity?.status === 'expired');
 
 const statusClass = computed(() => {
     if (isDone.value) return 'done';
@@ -76,6 +77,7 @@ const statusClass = computed(() => {
 const statusText = computed(() => {
     if (isDone.value) return 'Done';
     if (isActive.value) return 'Active';
+    if (isExpired.value) return 'Expired';
     return 'Pending';
 });
 
@@ -301,11 +303,13 @@ header {
 .status-dot.done { 
     background-color: var(--primary-color); 
 }
+.status-dot.expired { background-color: #e74c3c; }
 
 /* Status Text Colors */
 .status-text.pending { color: #3498db; }
 .status-text.active { color: #9b59b6; }
 .status-text.done { color: var(--primary-color); }
+.status-text.expired { color: #e74c3c; }
 
 /* Actions */
 .actions {
@@ -327,6 +331,12 @@ header {
 
 .btn-primary:active, .btn-primary:focus {
     background-color: var(--text-color); 
+}
+
+.btn-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .btn-primary.close-action {
