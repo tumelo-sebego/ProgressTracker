@@ -78,13 +78,16 @@ const links = [
   align-items: center;
 }
 
+.nav-text{
+  color: #1a1a1a;
+}
 .nav-item {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 44px;
-  min-width: 44px; /* Circle for icon */
-  color: #888; /* Inactive color */
+  min-width: 6rem; /* Circle for icon */
+  color: #fff; /* Inactive color */
   text-decoration: none;
   border-radius: 99px;
   transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
@@ -93,9 +96,8 @@ const links = [
   box-sizing: border-box;
 }
 
-.nav-item:hover {
-    color: #fff;
-    background-color: rgba(255,255,255,0.05);
+.nav-item.active{
+  background-color: #52a65b;
 }
 
 .nav-item.router-link-active {
