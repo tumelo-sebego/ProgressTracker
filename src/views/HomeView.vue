@@ -160,7 +160,7 @@ const exitArchive = () => {
     min-height: 100vh;
     box-sizing: border-box;
     padding-top: 24px;
-    background-color: var(--bg-color);
+    background-color: #f8faed;
 }
 
 .header.has-banner {

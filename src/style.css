@@ -26,6 +26,5 @@ body {
 
 main {
   flex: 1;
-  padding: 20px;
-  background-color: var(--bg-color);
+  background-color: #f8faed;
 }

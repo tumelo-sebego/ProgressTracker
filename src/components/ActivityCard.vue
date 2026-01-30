@@ -80,9 +80,9 @@ const handleClick = () => {
 
 <style scoped>
 .activity-card {
-  background-color: var(--card-bg, #EAECE2); 
+  background-color: #eaeed3; 
   border-radius: 20px; /* More rounded */
-  padding: 16px 24px;
+  padding: 0px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
