@@ -32,6 +32,10 @@
         </div>
     </section>
 
+    <button v-if="!hasActiveGoal" @click="startNewGoal" class="btn-start-goal">
+        Start a new Goal
+    </button>
+
     <button @click="logout" class="btn-logout">Log Out</button>
   </div>
 </template>
@@ -51,6 +55,10 @@ const initials = computed(() => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 });
 
+const hasActiveGoal = computed(() => {
+    return goals.value.some(g => g.status === 'active');
+});
+
 onMounted(async () => {
     // Ideally filter by user ID if we had multiple users
     goals.value = await db.goals.toArray();
@@ -63,6 +71,10 @@ const formatDate = (date) => {
 const viewGoal = (id) => {
     authStore.setViewingGoal(id);
     router.push('/');
+};
+
+const startNewGoal = () => {
+    router.push('/onboarding/goal');
 };
 
 const logout = () => {
@@ -165,7 +177,7 @@ h2 { margin: 0; }
 .arrow { color: #ccc; }
 
 .btn-logout {
-    margin-top: 40px;
+    margin-top: 20px;
     background: #fdecea;
     color: #d32f2f;
     border: none;
@@ -174,5 +186,23 @@ h2 { margin: 0; }
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
+}
+
+.btn-start-goal {
+    margin-top: 40px;
+    background-color: var(--primary-color);
+    color: var(--bg-color);
+    border: none;
+    padding: 20px;
+    width: 100%;
+    border-radius: 99px; /* Pill shape */
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.btn-start-goal:active {
+    transform: scale(0.98);
 }
 </style>
