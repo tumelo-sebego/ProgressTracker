@@ -41,17 +41,16 @@
              </div>
          </div>
 
-         <div class="actions">
-             <button v-if="!isActive && !isDone" @click="start" class="btn-primary start">Start</button>
-             <button v-else-if="isActive" @click="finish" class="btn-primary finish">Finish</button>
-             <button v-else @click="close" class="btn-primary close-action">Close</button>
+         <div class="actions" v-if="!isDone">
+             <button v-if="!isActive" @click="start" class="btn-primary start">Start</button>
+             <button v-else @click="finish" class="btn-primary finish">Finish</button>
          </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, onMounted } from 'vue';
+import { ref, computed, onUnmounted, onMounted, watch } from 'vue';
 import { useActivityStore } from '../stores/activityStore'; 
 
 // We accept activity as prop from App.vue (state from store passed down)
@@ -60,9 +59,6 @@ const props = defineProps({
 });
 
 const store = useActivityStore();
-// No emits needed if calling store directly? 
-// Or emit 'close' so App.vue can handle it?
-// App.vue listens to @close="store.closeActivity()".
 const emit = defineEmits(['close']);
 
 const timerInterval = ref(null);
@@ -85,8 +81,6 @@ const statusText = computed(() => {
 
 const formattedTime = computed(() => {
     let seconds = elapsedSeconds.value;
-    // If just opened and active, we need to sync with startTime
-    // If just opened and done, sync with duration
     const act = props.activity;
     if (!act) return "00:00:00";
     
@@ -150,8 +144,6 @@ onMounted(() => {
     syncTimer();
 });
 
-// Watch for activity changes (if store updates ref)
-import { watch } from 'vue';
 watch(() => props.activity, () => {
     syncTimer();
 }, { deep: true });
@@ -166,13 +158,11 @@ const close = () => {
 
 const start = async () => {
     await store.startActivity();
-    // syncTimer auto runs via watcher
 };
 
 const finish = async () => {
     await store.finishActivity();
     if (timerInterval.value) clearInterval(timerInterval.value);
-    // User stays on dialog to see done state
 };
 </script>
 
@@ -185,24 +175,27 @@ const finish = async () => {
     width: 100%;
     height: 100%;
     z-index: 2000;
-    background: transparent; /* Wrapper */
+    background: transparent; 
     display: flex;
     justify-content: center;
-    align-items: flex-end; /* Or stretch */
+    align-items: flex-end; 
 }
 
 .dialog {
-    background: #f8faed; /* Opaque bg */
+    --gap-x: 32px;
+    --gap-y: 16px;
+
+    background: #f8faed; 
     width: 100%;
     height: 100%;
-    /* border-radius: 0;  Fill screen usually means no radius at top if full height? Or maybe rounded top like a sheet? User: "fill the entire space". I will use 0 radius or small radius if it feels like a card. User said "until it reaches the top of the screen". Usually implies full coverage. Let's stick to full rect or very top rounded. */
     border-radius: 0; 
     padding: 32px;
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     align-items: center;
     box-sizing: border-box;
-    overflow-y: auto; /* Scrollable if needed */
+    overflow-y: hidden; /* Prevent vertical scroll */
 }
 
 /* Header/Close */
@@ -210,8 +203,6 @@ header {
     width: 100%;
     display: flex;
     justify-content: flex-start;
-    margin-bottom: 20px;
-    padding-top: 20px; /* Safe area */
 }
 
 .close-btn {
@@ -227,14 +218,14 @@ header {
 .activity-title {
     font-size: 28px;
     font-weight: 700;
-    margin-bottom: 60px;
+    margin-bottom: var(--gap-x);
     text-align: center;
     width: 100%;
 }
 
 .timer-display {
-    width: 240px;
-    height: 240px;
+    width: 210px;
+    height: 210px;
     flex-shrink: 0; 
     aspect-ratio: 1 / 1;
     background: #eaeed3;
@@ -246,7 +237,7 @@ header {
     font-weight: 700;
     color: #1a1a1a;
     font-feature-settings: "tnum";
-    margin-bottom: auto; 
+    margin-bottom: var(--gap-x);
 }
 
 /* Info Rows */
@@ -257,7 +248,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: var(--gap-y);
     font-size: 15px;
     font-weight: 700;
     width: 100%;
@@ -288,7 +279,7 @@ header {
     gap: 12px;
     font-size: 15px;
     font-weight: 700;
-    margin-bottom: 24px;
+    margin-bottom: var(--gap-x);
     width: 100%;
     box-sizing: border-box;
     color: #5BA874; 
@@ -314,7 +305,6 @@ header {
 /* Actions */
 .actions {
     width: 100%;
-    padding-bottom: 40px; /* Bottom padding */
 }
 
 .btn-primary {
