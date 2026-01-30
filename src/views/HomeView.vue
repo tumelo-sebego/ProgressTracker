@@ -4,7 +4,7 @@
 
     <div class="header" :class="{ 'has-banner': authStore.viewingGoalId }">
         <h1>Ola, {{ userName }}</h1>
-        <p class="date">{{ currentDate }}</p>
+        <p class="date">{{ formattedDate }}</p>
     </div>
 
     <div class="progress-section">
@@ -12,6 +12,8 @@
             :percentage="progressPercentage" 
             :size="260" 
             :stroke-width="20"
+            color="#5BA874" 
+            bgColor="#1a1a1a"
         />
     </div>
 
@@ -21,6 +23,7 @@
             :key="activity.id"
             :title="activity.title"
             :points="activity.points"
+            :duration="activity.duration"
             :status="activity.status"
             :disabled="isInteractionDisabled(activity)"
             @click="openActivity(activity)"
@@ -51,9 +54,12 @@ import { liveQuery } from 'dexie';
 const authStore = useAuthStore();
 const userName = computed(() => authStore.user?.name?.split(' ')[0] || 'User'); 
 
-const currentDate = computed(() => {
-    const options = { weekday: 'short', day: 'numeric', month: 'long' };
-    return new Date().toLocaleDateString('en-US', options);
+const formattedDate = computed(() => {
+    const date = new Date();
+    const w = date.toLocaleDateString('en-GB', { weekday: 'short' });
+    const d = date.getDate();
+    const m = date.toLocaleDateString('en-GB', { month: 'long' });
+    return `${w}. ${d} ${m}`;
 });
 
 const activities = ref([]);
@@ -77,12 +83,8 @@ const progressPercentage = computed(() => {
 // Live Data Query
 const subscription = liveQuery(async () => {
     if (authStore.viewingGoalId) {
-        // Fetch activities for the SPECIFIC goal being viewed
         return await db.activities.where('goalId').equals(authStore.viewingGoalId).toArray();
     } else {
-        // Fetch current active goal activities (Simplified logic: grab the 'active' goal, then its activities)
-        // For MVP simplicity, we just grab ALL activities if no specific goal is viewed 
-        // OR we grab the latest active goal (better).
         const activeGoal = await db.goals.where('status').equals('active').last();
         if (activeGoal) {
              return await db.activities.where('goalId').equals(activeGoal.id).toArray();
@@ -97,15 +99,12 @@ const subscription = liveQuery(async () => {
 });
 
 const isInteractionDisabled = (activity) => {
-    // Disable ALL if viewing past goal
     if (authStore.viewingGoalId) return true;
-    
-    // Original Focus Rule
     return currentActiveId.value !== null && currentActiveId.value !== activity.id;
 };
 
 const openActivity = (activity) => {
-    if (authStore.viewingGoalId) return; // No interaction in archive mode
+    if (authStore.viewingGoalId) return; 
 
     if (!currentActiveId.value || currentActiveId.value === activity.id) {
          selectedActivity.value = activity;
@@ -126,9 +125,24 @@ const startActivity = async (id) => {
 };
 
 const finishActivity = async (id) => {
+    // Calculate Duration
+    const activity = activities.value.find(a => a.id === id);
+    let durationVal = 0;
+    
+    if (activity && activity.startTime) {
+        const diff = Date.now() - activity.startTime;
+        durationVal = Math.round(diff / 60000); // Minutes
+        if (durationVal < 1) durationVal = 1; // Minimum 1 min
+    } else {
+        // Fallback if no start time? Just use points as duration estimate? 
+        // Or default 0.
+        durationVal = activity.points || 0; 
+    }
+
     await db.activities.update(id, { 
         status: 'done',
-        startTime: null 
+        startTime: null,
+        duration: durationVal
     });
     selectedActivity.value = null; 
 };
@@ -142,14 +156,15 @@ const exitArchive = () => {
 <style scoped>
 .home-view {
     padding: 24px;
-    padding-bottom: 100px; /* Space for Navbar */
+    padding-bottom: 120px; /* Space for Navbar */
     min-height: 100vh;
     box-sizing: border-box;
-    padding-top: 24px; /* Reset default */
+    padding-top: 24px;
+    background-color: var(--bg-color);
 }
 
 .header.has-banner {
-    margin-top: 40px; /* Push down for banner */
+    margin-top: 40px; 
 }
 
 .header {
@@ -157,26 +172,32 @@ const exitArchive = () => {
 }
 
 h1 {
-    font-size: 28px;
+    font-size: 32px; /* Larger title */
+    font-weight: 700;
     margin: 0;
-    color: #1a1a1a;
+    color: #000;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
 }
 
 .date {
-    color: #555;
-    font-weight: 500;
-    margin-top: 4px;
+    color: #1a1a1a;
+    font-size: 16px;
+    font-weight: 700; /* Bold date */
+    margin: 0;
+    letter-spacing: 0.5px;
 }
 
 .progress-section {
     display: flex;
     justify-content: center;
     margin-bottom: 40px;
+    margin-top: 20px;
 }
 
 .activities-section {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 </style>

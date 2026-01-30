@@ -71,6 +71,6 @@ const strokeDashoffset = computed(() => {
 .percentage {
   font-size: 48px;
   font-weight: 700;
-  color: #42b883;
+  color: var(--primary-color);
 }
 </style>
