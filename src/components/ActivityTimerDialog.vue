@@ -12,15 +12,21 @@
         </div>
 
         <div class="info-row">
-            <span class="bolt-icon">⚡</span>
-            <span>Activity Points</span>
-            <span class="divider">|</span>
-            <span class="points-val">{{ activity.points }}</span>
+            <div class="info-left">
+                <span class="bolt-icon">⚡</span>
+                <span>Activity Points</span>
+            </div>
+            <div class="info-right">
+                <span class="divider">|</span>
+                <span class="points-val">{{ activity.points }}</span>
+            </div>
         </div>
 
          <div class="status-summary">
-             <span class="status-dot" :class="isActive ? 'active' : 'pending'"></span>
-             <span>{{ isActive ? 'Active' : 'Pending' }}</span>
+             <div class="info-left">
+                 <span class="status-dot" :class="isActive ? 'active' : 'pending'"></span>
+                 <span>{{ isActive ? 'Active' : 'Pending' }}</span>
+             </div>
          </div>
 
          <div class="actions">
@@ -103,7 +109,7 @@ const finish = () => {
 }
 
 .dialog {
-    background: #F4F6F0;
+    background: #f8faed;
     width: 100%;
     max-width: 400px;
     height: 80vh;
@@ -145,7 +151,9 @@ header {
 .timer-display {
     width: 220px;
     height: 220px;
-    background: #E8EEDF;
+    flex-shrink: 0; /* Prevent squashing */
+    aspect-ratio: 1 / 1;
+    background: #eaeed3;
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -158,29 +166,45 @@ header {
 }
 
 .info-row {
-    background: #E0E6D9; /* slightly darker pill */
-    padding: 10px 20px;
+    background: var(--bg-color); /* Matches page/requested bg */
+    padding: 18px 20px; /* Taller to match button feel */
     border-radius: 99px;
     display: flex;
+    justify-content: space-between; /* Icon Left, Points Right */
     align-items: center;
     gap: 10px;
     margin-bottom: 15px;
-    font-size: 14px;
+    font-size: 16px; /* Slightly larger text */
+    font-weight: 700; /* Bold text */
+    width: 100%; /* Full width */
+    box-sizing: border-box;
 }
 
-.divider { color: #aaa; }
-.points-val { font-weight: bold; }
+.info-left, .info-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.divider { 
+    color: #ccc; 
+    font-weight: 400; /* Lighter divider maybe? User said bold text in each row class, keeping it bold or normal? Let's keep normal for divider line visually */
+    font-size: 20px;
+}
+.points-val { font-weight: 700; }
 
 .status-summary {
-    background: #E0E6D9;
-    padding: 10px 20px;
+    background: var(--bg-color);
+    padding: 18px 20px;
     border-radius: 99px;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 14px;
-    margin-bottom: auto;
-    width: fit-content;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: auto; /* Push to top section */
+    width: 100%; /* Full width */
+    box-sizing: border-box;
 }
 
 .status-dot {

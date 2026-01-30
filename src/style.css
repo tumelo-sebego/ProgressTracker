@@ -1,7 +1,7 @@
 :root {
-  --primary-color: #5BA874; /* Muted Green */
+  --primary-color: #52a65b; /* Muted Green */
   --secondary-color: #35495e;
-  --bg-color: #F8F9F4; /* Cream/Off-white */
+  --bg-color: #e6e7e9; /* Cream/Off-white */
   --card-bg: #EAECE2; /* Beige/Greenish-White for cards */
   --text-color: #1a1a1a;
 }

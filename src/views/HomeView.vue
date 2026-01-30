@@ -12,7 +12,7 @@
             :percentage="progressPercentage" 
             :size="260" 
             :stroke-width="20"
-            color="#5BA874" 
+            color="#52a65b" 
             bgColor="#1a1a1a"
         />
     </div>
@@ -175,7 +175,7 @@ h1 {
     font-size: 32px; /* Larger title */
     font-weight: 700;
     margin: 0;
-    color: #000;
+    color: #1a1a1a;
     margin-bottom: 8px;
     letter-spacing: -0.5px;
 }
