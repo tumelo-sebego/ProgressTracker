@@ -329,6 +329,10 @@ header {
     color: #fff; 
 }
 
+.btn-primary.finish{
+    background-color: var(--text-color);
+}
+
 .btn-primary:active, .btn-primary:focus {
     background-color: var(--text-color); 
 }
@@ -337,6 +341,7 @@ header {
     background-color: #ccc;
     cursor: not-allowed;
     opacity: 0.6;
+    color: var(--text-color);
 }
 
 .btn-primary.close-action {

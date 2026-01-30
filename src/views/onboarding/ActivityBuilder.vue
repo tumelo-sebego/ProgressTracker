@@ -136,7 +136,6 @@ const finish = async () => {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    padding: 20px;
 }
 
 .card {
@@ -144,8 +143,7 @@ const finish = async () => {
     padding: 24px;
     border-radius: 24px;
     width: 100%;
-    max-width: 360px;
-    height: 600px;
+    height: 100%;
     display: flex;
     flex-direction: column;
 }
