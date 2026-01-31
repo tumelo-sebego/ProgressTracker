@@ -86,10 +86,8 @@ const coachMessage = computed(() => {
 
 <style scoped>
 .analytics-card {
-    background: #fff;
     border-radius: 20px;
     padding: 24px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
 .coach-pill {
