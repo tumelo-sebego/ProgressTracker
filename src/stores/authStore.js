@@ -37,13 +37,19 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function finishOnboarding() {
     try {
+        // Calculate end_date based on duration
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(startDate.getDate() + onboardingData.value.goal.duration);
+
         // Save Goal
         const goalId = await db.goals.add({
             title: onboardingData.value.goal.title,
             duration: onboardingData.value.goal.duration,
             frequency: onboardingData.value.goal.frequency,
             status: 'active',
-            startDate: new Date(),
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: endDate.toISOString().split('T')[0],
             createdAt: new Date()
         });
 

@@ -82,6 +82,29 @@ export const useActivityStore = defineStore('activity', () => {
             }
         });
 
+        // Data Repair: Fix goals with missing or incorrectly named date fields
+        await db.goals.toCollection().modify(g => {
+            let changed = false;
+            // Map legacy camelCase field to snake_case schema field
+            if (g.startDate && !g.start_date) {
+                g.start_date = new Date(g.startDate).toISOString().split('T')[0];
+                changed = true;
+            }
+            if (!g.start_date && g.createdAt) {
+                g.start_date = new Date(g.createdAt).toISOString().split('T')[0];
+                changed = true;
+            }
+            if (!g.end_date && g.start_date && g.duration) {
+                const start = new Date(g.start_date);
+                const end = new Date(start);
+                end.setDate(start.getDate() + g.duration);
+                g.end_date = end.toISOString().split('T')[0];
+                changed = true;
+            }
+            // If the modify callback returns nothing or true, it updates the record if it changed the object.
+            // Dexie 3 modify callback: simply modifying the object 'g' is enough.
+        });
+
         // Find active goal
         const activeGoal = await db.goals.where('status').equals('active').last();
         if (!activeGoal) return;
