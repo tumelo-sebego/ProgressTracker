@@ -37,8 +37,7 @@ export const useActivityStore = defineStore('activity', () => {
         await db.activities.update(id, {
             status: 'active',
             startTime: now, // Keep for legacy/internal timer if needed
-            start_time: now, // NEW
-            date: new Date().toISOString() // NEW
+            start_time: now // NEW
         });
         
         const updated = await db.activities.get(id);
@@ -76,6 +75,13 @@ export const useActivityStore = defineStore('activity', () => {
     async function checkAndResetDaily() {
         const todayDate = new Date().toISOString().split('T')[0];
         
+        // Data Repair: Normalize any existing dates that might have been saved in the full ISO format
+        await db.activities.toCollection().modify(a => {
+            if (a.date && a.date.includes('T')) {
+                a.date = a.date.split('T')[0];
+            }
+        });
+
         // Find active goal
         const activeGoal = await db.goals.where('status').equals('active').last();
         if (!activeGoal) return;
