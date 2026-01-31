@@ -4,12 +4,10 @@
         <h1>Welcome Back</h1>
         
         <div class="input-group">
-            <label>Email</label>
             <input v-model="email" type="email" placeholder="Email address" class="input-field" />
         </div>
 
         <div class="input-group">
-            <label>Password</label>
             <input v-model="password" type="password" placeholder="Password" class="input-field" />
         </div>
 
@@ -57,10 +55,10 @@ const handleLogin = async () => {
     align-items: center;
     height: 100vh;
     padding: 20px;
+    background-color: var(--card-bg);
 }
 
 .card {
-    background: #F4F6F0; /* Light greenish/beige from design */
     padding: 40px 30px;
     border-radius: 24px;
     width: 100%;
@@ -68,13 +66,12 @@ const handleLogin = async () => {
     display: flex;
     flex-direction: column;
     gap: 30px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
 h1 {
     font-size: 28px;
     font-weight: 700;
-    color: #1a1a1a;
+    color: var(--secondary-color);
     margin: 0;
 }
 
@@ -102,10 +99,10 @@ label {
 .input-field {
     padding: 14px;
     border: none;
-    background: #E8EEDF; /* Matching input bg */
+    background: #fff; /* Matching input bg */
     border-radius: 12px;
     font-size: 16px;
-    color: #1a1a1a;
+    color: var(--secondary-color);
     outline: none;
     transition: box-shadow 0.2s;
 }
@@ -115,7 +112,7 @@ label {
 }
 
 .btn-primary {
-    background-color: #1a1a1a;
+    background-color: var(--primary-color);
     color: white;
     padding: 16px;
     border-radius: 99px; /* Pill shape */
