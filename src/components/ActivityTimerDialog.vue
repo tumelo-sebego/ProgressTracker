@@ -86,6 +86,7 @@ const formattedTime = computed(() => {
     const act = props.activity;
     if (!act) return "00:00:00";
     
+    // If activity is done and has a duration, use it if seconds not set
     if (isDone.value && act.duration) {
          if (seconds === 0) seconds = act.duration * 60; 
     }
@@ -97,8 +98,11 @@ const formattedTime = computed(() => {
 });
 
 const formattedDate = computed(() => {
-    if (!props.activity?.completedAt) return 'Today';
-    const date = new Date(props.activity.completedAt);
+    // Prefer the new 'date' field, fallback to completedAt or 'Today'
+    const dateSource = props.activity?.date || props.activity?.completedAt;
+    if (!dateSource) return 'Today';
+    
+    const date = new Date(dateSource);
     const d = date.getDate();
     const m = date.toLocaleDateString('en-GB', { month: 'long' });
     
@@ -112,12 +116,17 @@ const formattedDate = computed(() => {
 });
 
 const formattedTimeRange = computed(() => {
-    if (!props.activity?.startedAt || !props.activity?.completedAt) return '00:00 - 00:00';
+    // Prefer start_time / end_time
+    const start = props.activity?.start_time || props.activity?.startedAt;
+    const end = props.activity?.end_time || props.activity?.completedAt;
+    
+    if (!start || !end) return '00:00 - 00:00';
+    
     const format = (ts) => {
         const d = new Date(ts);
         return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
     };
-    return `${format(props.activity.startedAt)} - ${format(props.activity.completedAt)}`; 
+    return `${format(start)} - ${format(end)}`; 
 });
 
 const startTimerTick = () => {
@@ -129,9 +138,12 @@ const startTimerTick = () => {
 
 const syncTimer = () => {
     const act = props.activity;
-    if (act?.startTime) {
+    // Prefer start_time
+    const startTimeVal = act?.start_time || act?.startTime;
+    
+    if (act?.status === 'active' && startTimeVal) {
         const now = Date.now();
-        elapsedSeconds.value = Math.floor((now - act.startTime) / 1000);
+        elapsedSeconds.value = Math.floor((now - startTimeVal) / 1000);
         startTimerTick();
     } else if (act?.status === 'done' && act.duration) {
          elapsedSeconds.value = act.duration * 60; 

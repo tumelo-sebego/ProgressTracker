@@ -21,7 +21,9 @@
              >
                 <div class="goal-info">
                     <span class="goal-title">{{ goal.title }}</span>
-                    <span class="goal-date">{{ formatDate(goal.createdAt) }}</span>
+                    <span class="goal-date">
+                        {{ formatDate(goal.createdAt) }} • {{ calculateGoalDuration(goal) }} days
+                    </span>
                 </div>
                 <div class="goal-status">
                     <span class="status-badge" :class="goal.status">{{ goal.status }}</span>
@@ -66,6 +68,15 @@ onMounted(async () => {
 
 const formatDate = (date) => {
     return new Date(date).toLocaleDateString();
+};
+
+const calculateGoalDuration = (goal) => {
+    if (!goal.start_date || !goal.end_date) return 0;
+    const start = new Date(goal.start_date);
+    const end = new Date(goal.end_date);
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+    return diffDays;
 };
 
 const viewGoal = (id) => {

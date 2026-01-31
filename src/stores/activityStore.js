@@ -36,13 +36,11 @@ export const useActivityStore = defineStore('activity', () => {
         
         await db.activities.update(id, {
             status: 'active',
-            startTime: now,
-            startedAt: now
+            startTime: now, // Keep for legacy/internal timer if needed
+            start_time: now, // NEW
+            date: new Date().toISOString() // NEW
         });
         
-        // Update local state to reflect change immediately?
-        // LiveQuery in HomeView updates the list.
-        // We need to update `currentActivity` local ref too so the dialog sees it.
         const updated = await db.activities.get(id);
         currentActivity.value = updated;
     }
@@ -53,8 +51,11 @@ export const useActivityStore = defineStore('activity', () => {
         const now = Date.now();
         
         let durationVal = 0;
-        if (currentActivity.value.startTime) {
-            const diff = now - currentActivity.value.startTime;
+        // Use start_time if available, otherwise fallback to startTime
+        const startTimeVal = currentActivity.value.start_time || currentActivity.value.startTime;
+        
+        if (startTimeVal) {
+            const diff = now - startTimeVal;
             durationVal = Math.round(diff / 60000); 
             if (durationVal < 1) durationVal = 1;
         } else {
@@ -63,9 +64,9 @@ export const useActivityStore = defineStore('activity', () => {
 
         await db.activities.update(id, {
             status: 'done',
-            startTime: null,
-            completedAt: now,
-            duration: durationVal
+            startTime: null, // Clear internal timer ref
+            end_time: now, // NEW
+            duration: durationVal // NEW/Track duration
         });
 
         const updated = await db.activities.get(id);

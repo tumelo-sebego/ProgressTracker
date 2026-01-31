@@ -20,7 +20,7 @@
     <div class="card-right">
         <!-- DONE Status: Duration -->
         <div v-if="status === 'done'" class="stat-box">
-            <span class="stat-value">{{ duration || points }}</span>
+            <span class="stat-value">{{ duration != null ? duration : points }}</span>
             <span class="stat-unit">min</span>
         </div>
 
