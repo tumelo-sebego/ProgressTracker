@@ -42,6 +42,13 @@ const props = defineProps({
   activities: Array
 });
 
+const toLocalISO = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 // Calculate progress data for the chart (Daily Points, Reverse Chronological)
 const chartData = computed(() => {
     if (!props.activities) {
@@ -58,10 +65,14 @@ const chartData = computed(() => {
     const dailyPoints = {};
     props.activities.forEach(act => {
         if (!act.date || act.status !== 'done') return;
-        if (!dailyPoints[act.date]) {
-            dailyPoints[act.date] = 0;
+        
+        // Normalize date to YYYY-MM-DD if it's full ISO (data repair fallback)
+        const dateKey = act.date.includes('T') ? act.date.split('T')[0] : act.date;
+        
+        if (!dailyPoints[dateKey]) {
+            dailyPoints[dateKey] = 0;
         }
-        dailyPoints[act.date] += (act.points || 0);
+        dailyPoints[dateKey] += Number(act.points || 0);
     });
 
     // Populate data for the last 7 days (or until start_date) starting from Today
@@ -72,7 +83,7 @@ const chartData = computed(() => {
     let safetyCounter = 0; 
     
     while (current >= startLimit && safetyCounter < 10) { // Limit to 10 days for UI clarity
-        const dateStr = current.toISOString().split('T')[0];
+        const dateStr = toLocalISO(current);
         let label = "";
         
         if (safetyCounter === 0) {
