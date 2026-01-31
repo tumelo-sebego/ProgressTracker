@@ -22,7 +22,8 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 } from 'chart.js';
 
 ChartJS.register(
@@ -32,7 +33,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler
 );
 
 const props = defineProps({
@@ -40,50 +42,49 @@ const props = defineProps({
   activities: Array
 });
 
-// Calculate real progress data for the chart
+// Calculate progress data for the chart (Daily Points, Reverse Chronological)
 const chartData = computed(() => {
-    if (!props.goal?.start_date || !props.activities) {
+    if (!props.activities) {
         return { labels: [], datasets: [] };
     }
 
-    const start = new Date(props.goal.start_date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const labels = [];
-    const data = [];
+    const pointsData = [];
 
-    // Group activities by date
-    const dailyStats = {};
+    // Group points by date
+    const dailyPoints = {};
     props.activities.forEach(act => {
-        if (!act.date) return;
-        if (!dailyStats[act.date]) {
-            dailyStats[act.date] = { done: 0, total: 0 };
+        if (!act.date || act.status !== 'done') return;
+        if (!dailyPoints[act.date]) {
+            dailyPoints[act.date] = 0;
         }
-        dailyStats[act.date].total++;
-        if (act.status === 'done') {
-            dailyStats[act.date].done++;
-        }
+        dailyPoints[act.date] += (act.points || 0);
     });
 
-    // Populate data for each day from start to today
-    let current = new Date(start);
-    // Safety break to prevent infinite loops if dates are invalid
+    // Populate data for the last 7 days (or until start_date) starting from Today
+    const startLimit = props.goal?.start_date ? new Date(props.goal.start_date) : new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    startLimit.setHours(0, 0, 0, 0);
+
+    let current = new Date(today);
     let safetyCounter = 0; 
-    while (current <= today && safetyCounter < 365) {
+    
+    while (current >= startLimit && safetyCounter < 10) { // Limit to 10 days for UI clarity
         const dateStr = current.toISOString().split('T')[0];
-        const label = current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        let label = "";
+        
+        if (safetyCounter === 0) {
+            label = "Today";
+        } else {
+            label = current.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+        }
         
         labels.push(label);
-        
-        const stats = dailyStats[dateStr];
-        if (stats && stats.total > 0) {
-            data.push(Math.round((stats.done / stats.total) * 100));
-        } else {
-            data.push(0); // OR null if you want a gap in the line
-        }
+        pointsData.push(dailyPoints[dateStr] || 0);
 
-        current.setDate(current.getDate() + 1);
+        current.setDate(current.getDate() - 1);
         safetyCounter++;
     }
 
@@ -91,11 +92,14 @@ const chartData = computed(() => {
         labels,
         datasets: [
             {
-                label: 'Completion Rate',
-                backgroundColor: '#42b883',
+                label: 'Daily Points',
+                backgroundColor: 'rgba(66, 184, 131, 0.2)',
                 borderColor: '#42b883',
-                data,
-                tension: 0.4
+                borderWidth: 3,
+                pointBackgroundColor: '#42b883',
+                data: pointsData,
+                tension: 0.4,
+                fill: true
             }
         ]
     };
@@ -110,10 +114,12 @@ const chartOptions = {
     scales: {
         y: {
             beginAtZero: true,
+            min: 0,
             max: 100,
             grid: { color: '#f0f0f0' },
             ticks: {
-                callback: (value) => value + '%'
+                stepSize: 10,
+                callback: (value) => value
             }
         },
         x: {
@@ -123,11 +129,10 @@ const chartOptions = {
 };
 
 const coachMessage = computed(() => {
-    const dataset = chartData.value.datasets?.[0];
-    const progress = dataset?.data?.length > 0 ? dataset.data[dataset.data.length - 1] : 0; 
+    const todayPoints = chartData.value.datasets?.[0]?.data?.[0] || 0;
     
-    if (progress >= 80) return { emoji: '🔥', text: 'You are on track!' };
-    if (progress >= 50) return { emoji: '👍', text: 'Keep pushing!' };
+    if (todayPoints >= 80) return { emoji: '🔥', text: 'You are on track!' };
+    if (todayPoints >= 50) return { emoji: '👍', text: 'Keep pushing!' };
     return { emoji: '🌱', text: 'Just getting started.' };
 });
 </script>
