@@ -1,9 +1,6 @@
 <template>
   <div class="profile-view">
-    <header>
-        <h1>Profile</h1>
-        <p>Your journey so far.</p>
-    </header>
+    
 
     <div class="user-info">
         <div class="avatar-placeholder">{{ initials }}</div>
@@ -189,7 +186,7 @@ h2 { margin: 0; }
 
 .btn-logout {
     margin-top: 20px;
-    background: #fdecea;
+    background: var(--text-color);
     color: #d32f2f;
     border: none;
     padding: 16px;
