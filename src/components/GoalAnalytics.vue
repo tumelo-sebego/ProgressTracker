@@ -40,17 +40,61 @@ const props = defineProps({
   activities: Array
 });
 
-// Mocking data for visual demonstration since we don't have historical daily logs in this simple schema yet
-// In a real app, we'd query a 'daily_logs' table.
+// Calculate real progress data for the chart
 const chartData = computed(() => {
+    if (!props.goal?.start_date || !props.activities) {
+        return { labels: [], datasets: [] };
+    }
+
+    const start = new Date(props.goal.start_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const labels = [];
+    const data = [];
+
+    // Group activities by date
+    const dailyStats = {};
+    props.activities.forEach(act => {
+        if (!act.date) return;
+        if (!dailyStats[act.date]) {
+            dailyStats[act.date] = { done: 0, total: 0 };
+        }
+        dailyStats[act.date].total++;
+        if (act.status === 'done') {
+            dailyStats[act.date].done++;
+        }
+    });
+
+    // Populate data for each day from start to today
+    let current = new Date(start);
+    // Safety break to prevent infinite loops if dates are invalid
+    let safetyCounter = 0; 
+    while (current <= today && safetyCounter < 365) {
+        const dateStr = current.toISOString().split('T')[0];
+        const label = current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        labels.push(label);
+        
+        const stats = dailyStats[dateStr];
+        if (stats && stats.total > 0) {
+            data.push(Math.round((stats.done / stats.total) * 100));
+        } else {
+            data.push(0); // OR null if you want a gap in the line
+        }
+
+        current.setDate(current.getDate() + 1);
+        safetyCounter++;
+    }
+
     return {
-        labels: ['Day 1', 'Day 5', 'Day 10', 'Day 15', 'Day 20', 'Today'],
+        labels,
         datasets: [
             {
                 label: 'Completion Rate',
                 backgroundColor: '#42b883',
                 borderColor: '#42b883',
-                data: [0, 20, 45, 60, 75, 84], // Mock data
+                data,
                 tension: 0.4
             }
         ]
@@ -67,7 +111,10 @@ const chartOptions = {
         y: {
             beginAtZero: true,
             max: 100,
-            grid: { color: '#f0f0f0' }
+            grid: { color: '#f0f0f0' },
+            ticks: {
+                callback: (value) => value + '%'
+            }
         },
         x: {
             grid: { display: false }
@@ -76,8 +123,9 @@ const chartOptions = {
 };
 
 const coachMessage = computed(() => {
-    // Simple logic based on mock current progress
-    const progress = 84; 
+    const dataset = chartData.value.datasets?.[0];
+    const progress = dataset?.data?.length > 0 ? dataset.data[dataset.data.length - 1] : 0; 
+    
     if (progress >= 80) return { emoji: '🔥', text: 'You are on track!' };
     if (progress >= 50) return { emoji: '👍', text: 'Keep pushing!' };
     return { emoji: '🌱', text: 'Just getting started.' };
