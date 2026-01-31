@@ -1,12 +1,12 @@
 <template>
   <div class="analytics-card">
+    <div class="chart-container">
+        <Line :data="chartData" :options="chartOptions" />
+    </div>
+
     <div class="coach-pill">
         <span class="emoji">{{ coachMessage.emoji }}</span>
         <span>{{ coachMessage.text }}</span>
-    </div>
-
-    <div class="chart-container">
-        <Line :data="chartData" :options="chartOptions" />
     </div>
   </div>
 </template>
@@ -91,16 +91,19 @@ const coachMessage = computed(() => {
 }
 
 .coach-pill {
-    background: #E8EEDF;
-    color: #35495e;
-    padding: 8px 16px;
+    background: #E6E7E9;
+    color: #1a1a1a;
+    padding: 18px 24px;
     border-radius: 99px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 24px;
+    justify-content: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: 24px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .chart-container {
