@@ -3,7 +3,7 @@
     <ArchiveBanner v-if="authStore.viewingGoalId" @exit="exitArchive" />
 
     <div class="header" :class="{ 'has-banner': authStore.viewingGoalId }">
-        <h1>Ola, {{ userName }}</h1>
+        <h1>Ola {{ userName }}</h1>
         <p class="date">{{ formattedDate }}</p>
     </div>
 
@@ -75,20 +75,22 @@ const progressPercentage = computed(() => {
 
 // Live Data Query
 const subscription = liveQuery(async () => {
+    if (!authStore.user) return [];
+
     if (authStore.viewingGoalId) {
         return await db.activities
             .where('goalId').equals(authStore.viewingGoalId)
-            // Filter by date for goals - if viewing past goals, show all or specific?
-            // Usually if viewing archive, show all? 
-            // The user said "app should update every view to show only data of today"
-            // But if viewing a past goal in archive, it might be better to show all its activities.
-            // For now, I'll restrict only the active view.
             .toArray();
     } else {
-        const activeGoal = await db.goals.where('status').equals('active').last();
+        const activeGoal = await db.goals
+            .where('[userId+status]')
+            .equals([authStore.user.id, 'active'])
+            .first();
+
         if (activeGoal) {
              return await db.activities
-                .where({ goalId: activeGoal.id, date: todayDate })
+                .where('[userId+goalId+date]')
+                .equals([authStore.user.id, activeGoal.id, todayDate])
                 .toArray();
         }
         return [];

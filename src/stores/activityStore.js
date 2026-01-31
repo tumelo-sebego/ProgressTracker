@@ -2,17 +2,25 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { db } from '../db/schema';
 import { liveQuery } from 'dexie';
+import { useAuthStore } from './authStore';
 
 export const useActivityStore = defineStore('activity', () => {
     const currentActivity = ref(null);
     const isOpen = ref(false);
     const isAnyRunning = ref(false);
 
-    // Watch for any active activity
-    liveQuery(() => db.activities.where('status').equals('active').count())
-        .subscribe(count => {
-            isAnyRunning.value = count > 0;
-        });
+    const authStore = useAuthStore();
+
+    // Watch for any active activity for the current user
+    liveQuery(() => {
+        if (!authStore.user) return 0;
+        return db.activities
+            .where('[userId+status]')
+            .equals([authStore.user.id, 'active'])
+            .count();
+    }).subscribe(count => {
+        isAnyRunning.value = count > 0;
+    });
 
     function openActivity(activity) {
         currentActivity.value = activity;
@@ -105,13 +113,20 @@ export const useActivityStore = defineStore('activity', () => {
             // Dexie 3 modify callback: simply modifying the object 'g' is enough.
         });
 
-        // Find active goal
-        const activeGoal = await db.goals.where('status').equals('active').last();
+        // Find active goal for current user
+        if (!authStore.user) return;
+        
+        const activeGoal = await db.goals
+            .where('[userId+status]')
+            .equals([authStore.user.id, 'active'])
+            .first();
+
         if (!activeGoal) return;
 
         // Check if any activities exist for today
         const countToday = await db.activities
-            .where({ goalId: activeGoal.id, date: todayDate })
+            .where('[userId+goalId+date]')
+            .equals([authStore.user.id, activeGoal.id, todayDate])
             .count();
 
         if (countToday === 0) {
@@ -145,6 +160,7 @@ export const useActivityStore = defineStore('activity', () => {
 
             const newActivities = Array.from(templateMap.values()).map(a => ({
                 ...a,
+                userId: authStore.user.id,
                 status: 'pending',
                 date: todayDate
             }));

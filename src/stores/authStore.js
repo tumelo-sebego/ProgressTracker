@@ -12,15 +12,37 @@ export const useAuthStore = defineStore('auth', () => {
   const viewingGoalId = ref(null); // ID of goal being viewed (if null, viewing current active)
   const router = useRouter();
 
-  function login(username) {
-    user.value = { name: username };
-    localStorage.setItem('user', JSON.stringify(user.value));
+  async function signup(name, email, password) {
+    try {
+      const userId = await db.users.add({ name, email, password });
+      user.value = { id: userId, name, email };
+      localStorage.setItem('user', JSON.stringify(user.value));
+      return true;
+    } catch (error) {
+      console.error("Signup failed", error);
+      return false;
+    }
+  }
+
+  async function login(email, password) {
+    try {
+      const foundUser = await db.users.where('email').equals(email).first();
+      if (foundUser && foundUser.password === password) {
+        user.value = { id: foundUser.id, name: foundUser.name, email: foundUser.email };
+        localStorage.setItem('user', JSON.stringify(user.value));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Login failed", error);
+      return false;
+    }
   }
 
   function logout() {
     user.value = null;
     localStorage.removeItem('user');
-    // Router redirect handled in component or global guard usually, but good to have state clear here
+    onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily' }, activities: [] };
   }
 
   function setGoalData(data) {
@@ -44,6 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
 
         // Save Goal
         const goalId = await db.goals.add({
+            userId: user.value.id,
             title: onboardingData.value.goal.title,
             duration: onboardingData.value.goal.duration,
             frequency: onboardingData.value.goal.frequency,
@@ -56,6 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
         // Save Activities
         const todayDate = new Date().toISOString().split('T')[0];
         const activitiesToSave = onboardingData.value.activities.map(act => ({
+            userId: user.value.id,
             goalId: goalId,
             title: act.title,
             points: act.points,
@@ -87,6 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
     user, 
     onboardingData, 
     viewingGoalId,
+    signup,
     login, 
     logout, 
     setGoalData, 

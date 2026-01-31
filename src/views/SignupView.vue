@@ -1,8 +1,13 @@
 <template>
   <div class="login-container">
     <div class="card">
-        <h1>Welcome Back</h1>
+        <h1>Create Account</h1>
         
+        <div class="input-group">
+            <label>Name</label>
+            <input v-model="name" type="text" placeholder="Your name" class="input-field" />
+        </div>
+
         <div class="input-group">
             <label>Email</label>
             <input v-model="email" type="email" placeholder="Email address" class="input-field" />
@@ -13,12 +18,12 @@
             <input v-model="password" type="password" placeholder="Password" class="input-field" />
         </div>
 
-        <button @click="handleLogin" :disabled="!isFormValid" class="btn-primary">
-            Login
+        <button @click="handleSignup" :disabled="!isFormValid" class="btn-primary">
+            Sign Up
         </button>
 
         <p class="auth-link">
-            New user? <router-link to="/signup">Sign Up</router-link>
+            Already have an account? <router-link to="/login">Login</router-link>
         </p>
     </div>
   </div>
@@ -29,22 +34,23 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/authStore';
 
+const name = ref('');
 const email = ref('');
 const password = ref('');
 const authStore = useAuthStore();
 const router = useRouter();
 
 const isFormValid = computed(() => {
-    return email.value.trim() && password.value.trim();
+    return name.value.trim() && email.value.trim() && password.value.length >= 6;
 });
 
-const handleLogin = async () => {
+const handleSignup = async () => {
     if (isFormValid.value) {
-        const success = await authStore.login(email.value, password.value);
+        const success = await authStore.signup(name.value, email.value, password.value);
         if (success) {
-            router.push('/');
+            router.push('/welcome');
         } else {
-            alert('Invalid email or password.');
+            alert('Signup failed. Email might already be in use.');
         }
     }
 };
@@ -60,14 +66,14 @@ const handleLogin = async () => {
 }
 
 .card {
-    background: #F4F6F0; /* Light greenish/beige from design */
+    background: #F4F6F0;
     padding: 40px 30px;
     border-radius: 24px;
     width: 100%;
     max-width: 360px;
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
@@ -76,21 +82,13 @@ h1 {
     font-weight: 700;
     color: #1a1a1a;
     margin: 0;
-}
-
-.welcome-message {
-    background-color: #E8EEDF;
-    padding: 15px;
-    border-radius: 12px;
-    font-size: 14px;
-    color: #35495e;
-    line-height: 1.5;
+    margin-bottom: 10px;
 }
 
 .input-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 label {
@@ -102,7 +100,7 @@ label {
 .input-field {
     padding: 14px;
     border: none;
-    background: #E8EEDF; /* Matching input bg */
+    background: #E8EEDF;
     border-radius: 12px;
     font-size: 16px;
     color: #1a1a1a;
@@ -118,7 +116,7 @@ label {
     background-color: #1a1a1a;
     color: white;
     padding: 16px;
-    border-radius: 99px; /* Pill shape */
+    border-radius: 99px;
     border: none;
     font-size: 16px;
     font-weight: 600;

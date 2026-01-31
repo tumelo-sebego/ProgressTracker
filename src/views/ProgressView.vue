@@ -3,12 +3,18 @@ import { ref, computed, onMounted } from 'vue';
 import GoalAnalytics from '../components/GoalAnalytics.vue';
 import { db } from '../db/schema';
 import { liveQuery } from 'dexie';
+import { useAuthStore } from '../stores/authStore';
 
+const authStore = useAuthStore();
 const activeGoal = ref(null);
 const allGoalActivities = ref([]);
 
 const subscription = liveQuery(async () => {
-    const goal = await db.goals.where('status').equals('active').last();
+    if (!authStore.user) return null;
+    const goal = await db.goals
+        .where('[userId+status]')
+        .equals([authStore.user.id, 'active'])
+        .first();
     if (goal) {
         const activities = await db.activities.where('goalId').equals(goal.id).toArray();
         return { goal, activities };

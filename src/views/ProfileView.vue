@@ -59,8 +59,12 @@ const hasActiveGoal = computed(() => {
 });
 
 onMounted(async () => {
-    // Ideally filter by user ID if we had multiple users
-    goals.value = await db.goals.toArray();
+    if (authStore.user) {
+        goals.value = await db.goals
+            .where('userId')
+            .equals(authStore.user.id)
+            .toArray();
+    }
 });
 
 const formatDate = (date) => {

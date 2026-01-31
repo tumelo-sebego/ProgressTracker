@@ -3,9 +3,12 @@ import HomeView from '../views/HomeView.vue'
 import ProgressView from '../views/ProgressView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import LoginView from '../views/LoginView.vue'
+import SignupView from '../views/SignupView.vue'
+import WelcomeView from '../views/WelcomeView.vue'
 import GoalSetup from '../views/onboarding/GoalSetup.vue'
 import ActivityBuilder from '../views/onboarding/ActivityBuilder.vue'
 import { useAuthStore } from '../stores/authStore'
+import { db } from '../db/schema'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,6 +38,18 @@ const router = createRouter({
       meta: { hideNavbar: true }
     },
     {
+      path: '/signup',
+      name: 'signup',
+      component: SignupView,
+      meta: { hideNavbar: true }
+    },
+    {
+      path: '/welcome',
+      name: 'welcome',
+      component: WelcomeView,
+      meta: { requiresAuth: true, hideNavbar: true }
+    },
+    {
       path: '/onboarding/goal',
       name: 'goal-setup',
       component: GoalSetup,
@@ -49,13 +64,23 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   
   if (to.meta.requiresAuth && !authStore.user) {
     next('/login');
-  } else if (to.path === '/login' && authStore.user) {
+  } else if ((to.path === '/login' || to.path === '/signup') && authStore.user) {
     next('/');
+  } else if (to.path === '/' && authStore.user) {
+    const activeGoal = await db.goals
+      .where('[userId+status]')
+      .equals([authStore.user.id, 'active'])
+      .first();
+    if (!activeGoal) {
+      next('/welcome');
+    } else {
+      next();
+    }
   } else {
     next();
   }
