@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useActivityStore } from '../stores/activityStore';
 import CircularProgress from '../components/CircularProgress.vue';
@@ -55,6 +55,7 @@ const formattedDate = computed(() => {
 });
 
 const activities = ref([]);
+const todayDate = new Date().toISOString().split('T')[0];
 
 // We can still compute active ID for enabling/disabling if needed
 const currentActiveId = computed(() => {
@@ -75,11 +76,20 @@ const progressPercentage = computed(() => {
 // Live Data Query
 const subscription = liveQuery(async () => {
     if (authStore.viewingGoalId) {
-        return await db.activities.where('goalId').equals(authStore.viewingGoalId).toArray();
+        return await db.activities
+            .where('goalId').equals(authStore.viewingGoalId)
+            // Filter by date for goals - if viewing past goals, show all or specific?
+            // Usually if viewing archive, show all? 
+            // The user said "app should update every view to show only data of today"
+            // But if viewing a past goal in archive, it might be better to show all its activities.
+            // For now, I'll restrict only the active view.
+            .toArray();
     } else {
         const activeGoal = await db.goals.where('status').equals('active').last();
         if (activeGoal) {
-             return await db.activities.where('goalId').equals(activeGoal.id).toArray();
+             return await db.activities
+                .where({ goalId: activeGoal.id, date: todayDate })
+                .toArray();
         }
         return [];
     }
@@ -88,6 +98,10 @@ const subscription = liveQuery(async () => {
         activities.value = result;
     },
     error: error => console.error(error)
+});
+
+onMounted(async () => {
+    await activityStore.checkAndResetDaily();
 });
 
 const isInteractionDisabled = (activity) => {

@@ -48,11 +48,13 @@ export const useAuthStore = defineStore('auth', () => {
         });
 
         // Save Activities
+        const todayDate = new Date().toISOString().split('T')[0];
         const activitiesToSave = onboardingData.value.activities.map(act => ({
             goalId: goalId,
             title: act.title,
             points: act.points,
-            status: 'pending' // Default status
+            status: 'pending',
+            date: todayDate // Tag with today's date
         }));
         
         await db.activities.bulkAdd(activitiesToSave);

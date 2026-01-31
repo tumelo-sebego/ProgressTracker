@@ -73,6 +73,59 @@ export const useActivityStore = defineStore('activity', () => {
         currentActivity.value = updated;
     }
 
+    async function checkAndResetDaily() {
+        const todayDate = new Date().toISOString().split('T')[0];
+        
+        // Find active goal
+        const activeGoal = await db.goals.where('status').equals('active').last();
+        if (!activeGoal) return;
+
+        // Check if any activities exist for today
+        const countToday = await db.activities
+            .where({ goalId: activeGoal.id, date: todayDate })
+            .count();
+
+        if (countToday === 0) {
+            console.log("New day detected. Resetting activities...");
+            
+            // 1. Mark previous pending activities as 'expired'
+            // We find all pending ones for this goal that are NOT from today
+            await db.activities
+                .where('goalId').equals(activeGoal.id)
+                .and(a => a.status === 'pending' && a.date !== todayDate)
+                .modify({ status: 'expired' });
+
+            // 2. Clone activities from the goal's 'template'
+            // We'll take the first set of activities ever created for this goal as the template.
+            // Or better: unique titles from all activities for this goal.
+            const allGoalActivities = await db.activities
+                .where('goalId').equals(activeGoal.id)
+                .toArray();
+            
+            // Get unique activities based on title (simple template logic)
+            const templateMap = new Map();
+            allGoalActivities.forEach(a => {
+                if (!templateMap.has(a.title)) {
+                    templateMap.set(a.title, { 
+                        title: a.title, 
+                        points: a.points, 
+                        goalId: a.goalId 
+                    });
+                }
+            });
+
+            const newActivities = Array.from(templateMap.values()).map(a => ({
+                ...a,
+                status: 'pending',
+                date: todayDate
+            }));
+
+            if (newActivities.length > 0) {
+                await db.activities.bulkAdd(newActivities);
+            }
+        }
+    }
+
     return {
         currentActivity,
         isOpen,
@@ -80,6 +133,7 @@ export const useActivityStore = defineStore('activity', () => {
         openActivity,
         closeActivity,
         startActivity,
-        finishActivity
+        finishActivity,
+        checkAndResetDaily
     };
 });
