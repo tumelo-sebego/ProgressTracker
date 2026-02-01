@@ -14,18 +14,24 @@
                 v-for="goal in goals" 
                 :key="goal.id" 
                 class="goal-card"
-                @click="viewGoal(goal.id)"
              >
-                <div class="goal-info">
-                    <span class="goal-title">{{ goal.title }}</span>
-                    <span class="goal-date">
-                        {{ formatDate(goal.createdAt) }} • {{ calculateGoalDuration(goal) }} days
-                    </span>
+                <div class="goal-main-content" @click="viewGoal(goal.id)">
+                    <div class="goal-info">
+                        <span class="goal-title">{{ goal.title }}</span>
+                        <span class="goal-date">
+                            {{ formatDate(goal.createdAt) }} • {{ calculateGoalDuration(goal) }} days
+                        </span>
+                    </div>
+                    <div class="goal-status">
+                        <span class="status-badge" :class="goal.status">{{ goal.status }}</span>
+                        <span class="arrow">→</span>
+                    </div>
                 </div>
-                <div class="goal-status">
-                    <span class="status-badge" :class="goal.status">{{ goal.status }}</span>
-                    <span class="arrow">→</span>
-                </div>
+                <button class="delete-btn" @click.stop="confirmDelete(goal)" aria-label="Delete goal">
+                    <svg viewBox="0 0 24 24" width="20" height="20">
+                        <path fill="currentColor" d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z" />
+                    </svg>
+                </button>
              </div>
              <p v-if="goals.length === 0" class="empty-text">No past goals yet.</p>
         </div>
@@ -58,14 +64,16 @@ const hasActiveGoal = computed(() => {
     return goals.value.some(g => g.status === 'active');
 });
 
-onMounted(async () => {
+const fetchGoals = async () => {
     if (authStore.user) {
         goals.value = await db.goals
             .where('userId')
             .equals(authStore.user.id)
             .toArray();
     }
-});
+};
+
+onMounted(fetchGoals);
 
 const formatDate = (date) => {
     return new Date(date).toLocaleDateString();
@@ -87,6 +95,15 @@ const viewGoal = (id) => {
 
 const startNewGoal = () => {
     router.push('/onboarding/goal');
+};
+
+const confirmDelete = async (goal) => {
+    if (confirm(`Are you sure you want to delete the goal "${goal.title}"? All associated activity tracking will be permanently removed.`)) {
+        const success = await authStore.deleteGoal(goal.id);
+        if (success) {
+            await fetchGoals();
+        }
+    }
 };
 
 const logout = () => {
@@ -145,14 +162,19 @@ h2 { margin: 0; }
     padding: 16px;
     border-radius: 12px;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    cursor: pointer;
     transition: transform 0.1s;
 }
 
-.goal-card:active { transform: scale(0.99); }
+.goal-main-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+    cursor: pointer;
+}
 
 .goal-info {
     display: flex;
@@ -187,6 +209,27 @@ h2 { margin: 0; }
 .status-badge.done { background: #e8f5e9; color: #4caf50; }
 
 .arrow { color: #ccc; }
+
+.delete-btn {
+    background: none;
+    border: none;
+    color: #ff5252;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.delete-btn:hover {
+    background-color: #ffebee;
+}
+
+.delete-btn:active {
+    transform: scale(0.9);
+}
 
 .btn-logout {
     margin-top: 20px;

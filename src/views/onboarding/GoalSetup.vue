@@ -55,7 +55,13 @@
             </div>
         </div>
 
-        <button @click="nextStep" :disabled="!title || (startPreference === 'Specific Date' && !customDate)" class="btn-primary">Next</button>
+        <button 
+            @click="nextStep" 
+            :disabled="!title || (startPreference === 'Specific Date' && !customDate)" 
+            class="btn-primary"
+        >
+            Next
+        </button>
     </div>
   </div>
 </template>
@@ -77,10 +83,14 @@ const customDate = ref(authStore.onboardingData.goal.customStartDate || '');
 const todayString = computed(() => new Date().toISOString().split('T')[0]);
 
 const cancel = () => {
-    router.push('/');
+    router.push({ name: 'home' });
 };
 
 const nextStep = () => {
+    // Basic validation
+    if (!title.value) return;
+    if (startPreference.value === 'Specific Date' && !customDate.value) return;
+
     const finalFrequency = duration.value < 7 ? 'Daily' : (weeklyFrequency.value === 7 ? 'Daily' : `${weeklyFrequency.value} Days/Week`);
     
     authStore.setGoalData({
@@ -91,7 +101,8 @@ const nextStep = () => {
         startPreference: startPreference.value,
         customStartDate: customDate.value
     });
-    router.push('/onboarding/activities');
+
+    router.push({ name: 'activity-builder' });
 };
 </script>
 

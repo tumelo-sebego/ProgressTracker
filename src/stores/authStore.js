@@ -112,6 +112,23 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function deleteGoal(goalId) {
+    try {
+      // Delete associated activities
+      await db.activities.where('goalId').equals(goalId).delete();
+      // Delete the goal
+      await db.goals.delete(goalId);
+      
+      if (viewingGoalId.value === goalId) {
+        viewingGoalId.value = null;
+      }
+      return true;
+    } catch (error) {
+      console.error("Failed to delete goal:", error);
+      return false;
+    }
+  }
+
   function setViewingGoal(id) {
     viewingGoalId.value = id;
   }
