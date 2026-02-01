@@ -100,6 +100,13 @@ const isRestDay = ref(false);
 const countdownTime = ref('00:00:00');
 let countdownInterval = null;
 
+const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 // Live Data Query
 const subscription = liveQuery(async () => {
     if (!authStore.user) return [];
@@ -110,7 +117,7 @@ const subscription = liveQuery(async () => {
         .first();
 
     if (activeGoal) {
-        const todayDateStr = new Date().toISOString().split('T')[0];
+        const todayDateStr = getLocalDateString(new Date());
         const start = new Date(activeGoal.start_date);
         const today = new Date(todayDateStr);
         const diffInTime = today.getTime() - start.getTime();

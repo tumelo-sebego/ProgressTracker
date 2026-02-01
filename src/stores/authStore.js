@@ -12,6 +12,13 @@ export const useAuthStore = defineStore('auth', () => {
   const viewingGoalId = ref(null); // ID of goal being viewed (if null, viewing current active)
   const router = useRouter();
 
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   async function signup(name, email, password) {
     try {
       const userId = await db.users.add({ name, email, password });
@@ -75,6 +82,9 @@ export const useAuthStore = defineStore('auth', () => {
         const endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + onboardingData.value.goal.duration);
 
+        const startDateStr = getLocalDateString(startDate);
+        const endDateStr = getLocalDateString(endDate);
+
         // Save Goal
         const goalId = await db.goals.add({
             userId: user.value.id,
@@ -83,14 +93,14 @@ export const useAuthStore = defineStore('auth', () => {
             frequency: onboardingData.value.goal.frequency,
             weeklyDays: onboardingData.value.goal.weeklyDays,
             status: 'active',
-            start_date: startDate.toISOString().split('T')[0],
-            end_date: endDate.toISOString().split('T')[0],
+            start_date: startDateStr,
+            end_date: endDateStr,
             createdAt: new Date()
         });
 
         // Save Activities
         // Tag activities with the actual start date for the first set
-        const activitiesStartDate = startDate.toISOString().split('T')[0];
+        const activitiesStartDate = startDateStr;
         const activitiesToSave = onboardingData.value.activities.map(act => ({
             userId: user.value.id,
             goalId: goalId,
@@ -148,6 +158,7 @@ export const useAuthStore = defineStore('auth', () => {
     addActivity, 
     removeActivity,
     finishOnboarding,
+    deleteGoal,
     setViewingGoal,
     clearViewingGoal
   };

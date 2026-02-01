@@ -11,6 +11,13 @@ export const useActivityStore = defineStore('activity', () => {
 
     const authStore = useAuthStore();
 
+    const getLocalDateString = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // Reactive subscription to active activities
     let activitySubscription = null;
     watch(() => authStore.user, (newUser) => {
@@ -89,7 +96,7 @@ export const useActivityStore = defineStore('activity', () => {
 
     async function checkAndResetDaily() {
         console.log("Checking and resetting daily activities...");
-        const todayDate = new Date().toISOString().split('T')[0];
+        const todayDate = getLocalDateString(new Date());
         
         await db.activities.toCollection().modify(a => {
             if (a.date && a.date.includes('T')) {
