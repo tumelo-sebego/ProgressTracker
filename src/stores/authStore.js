@@ -6,7 +6,7 @@ import { db } from '../db/schema';
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user')) || null);
   const onboardingData = ref({
-    goal: { title: '', duration: 1, frequency: 'Daily', startPreference: 'Today' }, // Defaults
+    goal: { title: '', duration: 1, frequency: '1 Day/Week', weeklyDays: 1, startPreference: 'Today' }, // Defaults
     activities: []
   });
   const viewingGoalId = ref(null); // ID of goal being viewed (if null, viewing current active)

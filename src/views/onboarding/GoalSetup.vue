@@ -64,7 +64,7 @@ const authStore = useAuthStore();
 
 const title = ref(authStore.onboardingData.goal.title);
 const duration = ref(authStore.onboardingData.goal.duration || 1);
-const weeklyFrequency = ref(authStore.onboardingData.goal.frequency === 'Daily' ? 7 : 1);
+const weeklyFrequency = ref(authStore.onboardingData.goal.weeklyDays || 1);
 const startPreference = ref(authStore.onboardingData.goal.startPreference || 'Today');
 
 const cancel = () => {
