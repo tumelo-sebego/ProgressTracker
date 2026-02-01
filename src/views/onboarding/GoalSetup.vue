@@ -14,21 +14,26 @@
 
             <div class="form-group">
                 <label>How many days will you be doing the Activities?</label>
-                <div class="select-wrapper">
-                    <select v-model="duration" class="input-field">
-                        <option v-for="n in 30" :key="n" :value="n">{{ n }} Day{{ n > 1 ? 's' : '' }}</option>
-                    </select>
+                <div class="slider-container">
+                    <input type="range" v-model="duration" min="1" max="30" class="custom-slider" />
+                    <span class="slider-value">{{ duration }} Day{{ duration > 1 ? 's' : '' }}</span>
                 </div>
             </div>
 
              <div class="form-group">
                 <label>How many days in a week will you be doing the Activities?</label>
+                <div class="slider-container">
+                    <input type="range" v-model="weeklyFrequency" min="1" max="7" class="custom-slider" />
+                    <span class="slider-value">{{ weeklyFrequency }} Day{{ weeklyFrequency > 1 ? 's' : '' }}</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>When would you like to start?</label>
                 <div class="select-wrapper">
-                    <select v-model="frequency" class="input-field">
-                        <option value="Daily">Daily</option>
-                        <option value="Weekly">Weekly</option>
-                        <option value="Weekdays">Weekdays</option>
-                        <option value="Weekends">Weekends</option>
+                    <select v-model="startPreference" class="input-field">
+                        <option value="Today">Today</option>
+                        <option value="Tomorrow">Tomorrow</option>
                     </select>
                 </div>
             </div>
@@ -48,8 +53,9 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const title = ref(authStore.onboardingData.goal.title);
-const duration = ref(authStore.onboardingData.goal.duration);
-const frequency = ref(authStore.onboardingData.goal.frequency);
+const duration = ref(authStore.onboardingData.goal.duration || 1);
+const weeklyFrequency = ref(authStore.onboardingData.goal.frequency === 'Daily' ? 7 : 1);
+const startPreference = ref(authStore.onboardingData.goal.startPreference || 'Today');
 
 const cancel = () => {
     router.push('/');
@@ -58,8 +64,10 @@ const cancel = () => {
 const nextStep = () => {
     authStore.setGoalData({
         title: title.value,
-        duration: duration.value,
-        frequency: frequency.value
+        duration: parseInt(duration.value),
+        frequency: weeklyFrequency.value === 7 ? 'Daily' : `${weeklyFrequency.value} Days/Week`,
+        weeklyDays: parseInt(weeklyFrequency.value),
+        startPreference: startPreference.value
     });
     router.push('/onboarding/activities');
 };
@@ -82,6 +90,7 @@ const nextStep = () => {
     display: flex;
     flex-direction: column;
     position: relative;
+    box-sizing: border-box;
 }
 
 header {
@@ -117,8 +126,9 @@ header {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 24px;
     overflow-y: auto;
+    padding-bottom: 20px;
 }
 
 .form-group {
@@ -144,6 +154,51 @@ label {
     box-sizing: border-box; /* Fix padding issues */
 }
 
+/* Slider Styling */
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.custom-slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px; /* Thin line */
+    background: #ccc;
+    outline: none;
+    border-radius: 2px;
+    margin: 15px 0;
+}
+
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #42b883; /* Green dot */
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.custom-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #42b883;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slider-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #42b883;
+}
+
 /* Custom Select Styling */
 .select-wrapper {
     position: relative;
@@ -160,6 +215,7 @@ label {
 }
 
 select.input-field {
+    -webkit-appearance: none;
     appearance: none;
     cursor: pointer;
 }
@@ -173,7 +229,7 @@ select.input-field {
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    margin-top: 20px;
+    margin-top: 10px;
 }
 
 .btn-primary:active {

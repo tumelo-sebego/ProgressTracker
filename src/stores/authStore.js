@@ -6,7 +6,7 @@ import { db } from '../db/schema';
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user')) || null);
   const onboardingData = ref({
-    goal: { title: '', duration: 1, frequency: 'Daily' }, // Defaults
+    goal: { title: '', duration: 1, frequency: 'Daily', startPreference: 'Today' }, // Defaults
     activities: []
   });
   const viewingGoalId = ref(null); // ID of goal being viewed (if null, viewing current active)
@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     user.value = null;
     localStorage.removeItem('user');
-    onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily' }, activities: [] };
+    onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily', startPreference: 'Today' }, activities: [] };
   }
 
   function setGoalData(data) {
@@ -63,9 +63,14 @@ export const useAuthStore = defineStore('auth', () => {
         return true; // Allow proceeding in dev mode
     }
     try {
-        // Calculate end_date based on duration
+        // Calculate start_date based on preference
         const startDate = new Date();
-        const endDate = new Date();
+        if (onboardingData.value.goal.startPreference === 'Tomorrow') {
+            startDate.setDate(startDate.getDate() + 1);
+            startDate.setHours(0, 0, 0, 0);
+        }
+
+        const endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + onboardingData.value.goal.duration);
 
         // Save Goal
@@ -81,20 +86,21 @@ export const useAuthStore = defineStore('auth', () => {
         });
 
         // Save Activities
-        const todayDate = new Date().toISOString().split('T')[0];
+        // Tag activities with the actual start date for the first set
+        const activitiesStartDate = startDate.toISOString().split('T')[0];
         const activitiesToSave = onboardingData.value.activities.map(act => ({
             userId: user.value.id,
             goalId: goalId,
             title: act.title,
             points: act.points,
             status: 'pending',
-            date: todayDate // Tag with today's date
+            date: activitiesStartDate
         }));
         
         await db.activities.bulkAdd(activitiesToSave);
 
         // Reset Onboarding Data
-        onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily' }, activities: [] };
+        onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily', startPreference: 'Today' }, activities: [] };
         
         return true;
     } catch (error) {

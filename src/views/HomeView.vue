@@ -7,33 +7,45 @@
         <p class="date">{{ formattedDate }}</p>
     </div>
 
-    <div class="progress-section">
-        <CircularProgress 
-            :percentage="progressPercentage" 
-            :size="260" 
-            :stroke-width="20"
-            color="#52a65b" 
-            bgColor="#1a1a1a"
-        />
+    <div v-if="!hasStarted" class="countdown-section">
+        <div class="countdown-card">
+            <h2>Your journey begins in...</h2>
+            <div class="timer">
+                {{ countdownTime }}
+            </div>
+            <p>Get ready for a fresh start!</p>
+        </div>
     </div>
 
-    <div class="activities-section">
-        <ActivityCard
-            v-for="activity in activities"
-            :key="activity.id"
-            :title="activity.title"
-            :points="activity.points"
-            :duration="activity.duration"
-            :status="activity.status"
-            :disabled="isInteractionDisabled(activity)"
-            @click="openActivity(activity)"
-        />
-    </div>
+    <template v-else>
+        <div class="progress-section">
+            <CircularProgress 
+                :percentage="progressPercentage" 
+                :size="260" 
+                :stroke-width="20"
+                color="#52a65b" 
+                bgColor="#1a1a1a"
+            />
+        </div>
+
+        <div class="activities-section">
+            <ActivityCard
+                v-for="activity in activities"
+                :key="activity.id"
+                :title="activity.title"
+                :points="activity.points"
+                :duration="activity.duration"
+                :status="activity.status"
+                :disabled="isInteractionDisabled(activity)"
+                @click="openActivity(activity)"
+            />
+        </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useActivityStore } from '../stores/activityStore';
 import CircularProgress from '../components/CircularProgress.vue';
@@ -73,20 +85,36 @@ const progressPercentage = computed(() => {
     return totalPoints === 0 ? 0 : Math.round((donePoints / totalPoints) * 100);
 });
 
+const hasStarted = ref(true);
+const countdownTime = ref('00:00:00');
+let countdownInterval = null;
+
 // Live Data Query
 const subscription = liveQuery(async () => {
     if (!authStore.user) return [];
+
+    const activeGoal = await db.goals
+        .where('[userId+status]')
+        .equals([authStore.user.id, 'active'])
+        .first();
+
+    if (activeGoal) {
+        // Check if goal has started
+        const today = new Date().toISOString().split('T')[0];
+        if (activeGoal.start_date > today) {
+            hasStarted.value = false;
+            startCountdown(activeGoal.start_date);
+        } else {
+            hasStarted.value = true;
+            if (countdownInterval) clearInterval(countdownInterval);
+        }
+    }
 
     if (authStore.viewingGoalId) {
         return await db.activities
             .where('goalId').equals(authStore.viewingGoalId)
             .toArray();
     } else {
-        const activeGoal = await db.goals
-            .where('[userId+status]')
-            .equals([authStore.user.id, 'active'])
-            .first();
-
         if (activeGoal) {
              return await db.activities
                 .where('[userId+goalId+date]')
@@ -102,8 +130,39 @@ const subscription = liveQuery(async () => {
     error: error => console.error(error)
 });
 
+const startCountdown = (startDateStr) => {
+    if (countdownInterval) clearInterval(countdownInterval);
+    
+    const updateCountdown = () => {
+        const now = new Date();
+        const start = new Date(startDateStr);
+        start.setHours(0, 0, 0, 0);
+        
+        const diff = start - now;
+        
+        if (diff <= 0) {
+            hasStarted.value = true;
+            clearInterval(countdownInterval);
+            return;
+        }
+        
+        const hours = Math.floor(diff / 3600000);
+        const minutes = Math.floor((diff % 3600000) / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        
+        countdownTime.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    };
+    
+    updateCountdown();
+    countdownInterval = setInterval(updateCountdown, 1000);
+};
+
 onMounted(async () => {
     await activityStore.checkAndResetDaily();
+});
+
+onUnmounted(() => {
+    if (countdownInterval) clearInterval(countdownInterval);
 });
 
 const isInteractionDisabled = (activity) => {
@@ -166,5 +225,46 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+/* Countdown Styles */
+.countdown-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    padding: 20px;
+    margin-top: -40px; /* Center it better visually */
+}
+
+.countdown-card {
+    background: #EAEED3;
+    padding: 40px;
+    border-radius: 32px;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+}
+
+.countdown-card h2 {
+    font-size: 18px;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+
+.timer {
+    font-size: 48px;
+    font-weight: 800;
+    color: #1a1a1a;
+    font-feature-settings: "tnum";
+    margin: 20px 0;
+    letter-spacing: -1px;
+}
+
+.countdown-card p {
+    color: #888;
+    font-size: 14px;
+    margin: 0;
 }
 </style>
