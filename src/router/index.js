@@ -67,7 +67,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   
-  if (to.meta.requiresAuth && !authStore.user && !to.path.startsWith('/onboarding')) {
+  if (to.meta.requiresAuth && !authStore.user && !(import.meta.env.DEV && to.path.startsWith('/onboarding'))) {
     next('/login');
   } else if ((to.path === '/login' || to.path === '/signup') && authStore.user) {
     next('/');
