@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { db } from '../db/schema';
 import { liveQuery } from 'dexie';
 import { useAuthStore } from './authStore';
@@ -11,16 +11,27 @@ export const useActivityStore = defineStore('activity', () => {
 
     const authStore = useAuthStore();
 
-    // Watch for any active activity for the current user
-    liveQuery(() => {
-        if (!authStore.user) return 0;
-        return db.activities
-            .where('[userId+status]')
-            .equals([authStore.user.id, 'active'])
-            .count();
-    }).subscribe(count => {
-        isAnyRunning.value = count > 0;
-    });
+    // Reactive subscription to active activities
+    let activitySubscription = null;
+    watch(() => authStore.user, (newUser) => {
+        if (activitySubscription) {
+            activitySubscription.unsubscribe();
+            activitySubscription = null;
+        }
+
+        if (newUser) {
+            activitySubscription = liveQuery(() => {
+                return db.activities
+                    .where('[userId+status]')
+                    .equals([newUser.id, 'active'])
+                    .count();
+            }).subscribe(count => {
+                isAnyRunning.value = count > 0;
+            });
+        } else {
+            isAnyRunning.value = false;
+        }
+    }, { immediate: true });
 
     function openActivity(activity) {
         currentActivity.value = activity;
