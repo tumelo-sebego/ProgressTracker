@@ -274,12 +274,10 @@ h1 {
 }
 
 .countdown-card {
-    background: #EAEED3;
     padding: 40px;
     border-radius: 32px;
     text-align: center;
     width: 100%;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.05);
 }
 
 .countdown-card.rest-card {
@@ -296,7 +294,7 @@ h1 {
 .timer {
     font-size: 48px;
     font-weight: 800;
-    color: #1a1a1a;
+    color: var(--primary-text-color);
     font-feature-settings: "tnum";
     margin: 20px 0;
     letter-spacing: -1px;
