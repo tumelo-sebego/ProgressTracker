@@ -36,7 +36,8 @@
 
          <div class="status-summary">
              <div class="info-left">
-                 <span class="status-dot" :class="statusClass"></span>
+                 <PulsatingDot v-if="isActive" class="status-pulsate" />
+                 <span v-else class="status-dot" :class="statusClass"></span>
                  <span :class="statusClass" class="status-text">{{ statusText }}</span>
              </div>
          </div>
@@ -52,6 +53,7 @@
 <script setup>
 import { ref, computed, onUnmounted, onMounted, watch } from 'vue';
 import { useActivityStore } from '../stores/activityStore'; 
+import PulsatingDot from './PulsatingDot.vue';
 
 // We accept activity as prop from App.vue (state from store passed down)
 const props = defineProps({
@@ -304,7 +306,7 @@ header {
 }
 
 /* Status dots */
-.status-dot {
+.status-dot, .status-pulsate {
     width: 18px; 
     height: 18px;
     border-radius: 50%;
