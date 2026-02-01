@@ -58,6 +58,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function finishOnboarding() {
+    if (!user.value) {
+        alert("Development Mode: No user logged in. Progress will not be saved to the database.");
+        return true; // Allow proceeding in dev mode
+    }
     try {
         // Calculate end_date based on duration
         const startDate = new Date();

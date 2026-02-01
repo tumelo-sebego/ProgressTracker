@@ -18,6 +18,10 @@
         <p class="auth-link">
             New user? <router-link to="/signup">Sign Up</router-link>
         </p>
+
+        <button v-if="isDev" @click="router.push('/onboarding/goal')" class="btn-secondary">
+            View Onboarding (Dev Mode)
+        </button>
     </div>
   </div>
 </template>
@@ -31,6 +35,7 @@ const email = ref('');
 const password = ref('');
 const authStore = useAuthStore();
 const router = useRouter();
+const isDev = import.meta.env.DEV;
 
 const isFormValid = computed(() => {
     return email.value.trim() && password.value.trim();
@@ -134,6 +139,25 @@ label {
 .btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--secondary-color);
+    padding: 12px;
+    border-radius: 99px;
+    border: 1px solid var(--secondary-color);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+    opacity: 0.7;
+}
+
+.btn-secondary:hover {
+    opacity: 1;
+    background-color: rgba(0,0,0,0.05);
 }
 
 .auth-link {
