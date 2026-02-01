@@ -107,6 +107,21 @@ const getLocalDateString = (date) => {
     return `${year}-${month}-${day}`;
 };
 
+const formatGoalDate = (dateStr) => {
+    const date = new Date(dateStr);
+    const weekday = date.toLocaleDateString('en-GB', { weekday: 'short' });
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-GB', { month: 'short' });
+    
+    const getOrdinal = (n) => {
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    };
+    
+    return `${weekday} ${getOrdinal(day)} ${month}`;
+};
+
 // Live Data Query
 const subscription = liveQuery(async () => {
     if (!authStore.user) return [];
@@ -179,6 +194,12 @@ const startCountdown = (startDateStr) => {
         if (diff <= 0) {
             hasStarted.value = true;
             clearInterval(countdownInterval);
+            return;
+        }
+
+        // If more than 24 hours away, show formatted date
+        if (diff > 24 * 3600 * 1000) {
+            countdownTime.value = formatGoalDate(startDateStr);
             return;
         }
         
