@@ -44,18 +44,24 @@
                     <select v-model="startPreference" class="input-field">
                         <option value="Today">Today</option>
                         <option value="Tomorrow">Tomorrow</option>
+                        <option value="Specific Date">Set A Date</option>
                     </select>
                 </div>
             </div>
+
+            <div v-if="startPreference === 'Specific Date'" class="form-group">
+                <label>Pick a start date</label>
+                <input v-model="customDate" type="date" class="input-field" :min="todayString" />
+            </div>
         </div>
 
-        <button @click="nextStep" :disabled="!title" class="btn-primary">Next</button>
+        <button @click="nextStep" :disabled="!title || (startPreference === 'Specific Date' && !customDate)" class="btn-primary">Next</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -66,6 +72,9 @@ const title = ref(authStore.onboardingData.goal.title);
 const duration = ref(authStore.onboardingData.goal.duration || 1);
 const weeklyFrequency = ref(authStore.onboardingData.goal.weeklyDays || 1);
 const startPreference = ref(authStore.onboardingData.goal.startPreference || 'Today');
+const customDate = ref(authStore.onboardingData.goal.customStartDate || '');
+
+const todayString = computed(() => new Date().toISOString().split('T')[0]);
 
 const cancel = () => {
     router.push('/');
@@ -79,7 +88,8 @@ const nextStep = () => {
         duration: parseInt(duration.value),
         frequency: finalFrequency,
         weeklyDays: duration.value < 7 ? 7 : parseInt(weeklyFrequency.value),
-        startPreference: startPreference.value
+        startPreference: startPreference.value,
+        customStartDate: customDate.value
     });
     router.push('/onboarding/activities');
 };

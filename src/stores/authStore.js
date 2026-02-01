@@ -6,7 +6,7 @@ import { db } from '../db/schema';
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user')) || null);
   const onboardingData = ref({
-    goal: { title: '', duration: 1, frequency: '1 Day/Week', weeklyDays: 1, startPreference: 'Today' }, // Defaults
+    goal: { title: '', duration: 1, frequency: '1 Day/Week', weeklyDays: 1, startPreference: 'Today', customStartDate: '' }, // Defaults
     activities: []
   });
   const viewingGoalId = ref(null); // ID of goal being viewed (if null, viewing current active)
@@ -42,7 +42,7 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     user.value = null;
     localStorage.removeItem('user');
-    onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily', startPreference: 'Today' }, activities: [] };
+    onboardingData.value = { goal: { title: '', duration: 1, frequency: '1 Day/Week', weeklyDays: 1, startPreference: 'Today', customStartDate: '' }, activities: [] };
   }
 
   function setGoalData(data) {
@@ -64,11 +64,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
     try {
         // Calculate start_date based on preference
-        const startDate = new Date();
+        let startDate = new Date();
         if (onboardingData.value.goal.startPreference === 'Tomorrow') {
             startDate.setDate(startDate.getDate() + 1);
-            startDate.setHours(0, 0, 0, 0);
+        } else if (onboardingData.value.goal.startPreference === 'Specific Date' && onboardingData.value.goal.customStartDate) {
+            startDate = new Date(onboardingData.value.goal.customStartDate);
         }
+        startDate.setHours(0, 0, 0, 0);
 
         const endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + onboardingData.value.goal.duration);
@@ -79,6 +81,7 @@ export const useAuthStore = defineStore('auth', () => {
             title: onboardingData.value.goal.title,
             duration: onboardingData.value.goal.duration,
             frequency: onboardingData.value.goal.frequency,
+            weeklyDays: onboardingData.value.goal.weeklyDays,
             status: 'active',
             start_date: startDate.toISOString().split('T')[0],
             end_date: endDate.toISOString().split('T')[0],
@@ -100,7 +103,7 @@ export const useAuthStore = defineStore('auth', () => {
         await db.activities.bulkAdd(activitiesToSave);
 
         // Reset Onboarding Data
-        onboardingData.value = { goal: { title: '', duration: 1, frequency: 'Daily', startPreference: 'Today' }, activities: [] };
+        onboardingData.value = { goal: { title: '', duration: 1, frequency: '1 Day/Week', weeklyDays: 1, startPreference: 'Today', customStartDate: '' }, activities: [] };
         
         return true;
     } catch (error) {

@@ -127,13 +127,34 @@ export const useActivityStore = defineStore('activity', () => {
             .count();
 
         if (countToday === 0) {
-            console.log("New day detected. Resetting activities...");
+            console.log("New day detected. Calculating cycle state...");
             
+            // Calculate if today is a rest day
+            const start = new Date(activeGoal.start_date);
+            const today = new Date(todayDate);
+            const diffInTime = today.getTime() - start.getTime();
+            const diffInDays = Math.floor(diffInTime / (1000 * 3600 * 24));
+
+            if (diffInDays < 0) {
+                console.log("Goal hasn't started yet.");
+                return;
+            }
+
+            const dayInCycle = diffInDays % 7;
+            const isRestDay = dayInCycle >= (activeGoal.weeklyDays || 7);
+
+            // Clean up any old pending activities
             await db.activities
                 .where('goalId').equals(activeGoal.id)
                 .and(a => a.status === 'pending' && a.date !== todayDate)
                 .modify({ status: 'expired' });
 
+            if (isRestDay) {
+                console.log("Today is a rest day. No activities generated.");
+                return;
+            }
+
+            console.log("Active day in cycle. Generating activities...");
             const allGoalActivities = await db.activities
                 .where('goalId').equals(activeGoal.id)
                 .toArray();

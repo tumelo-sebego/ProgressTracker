@@ -17,6 +17,16 @@
         </div>
     </div>
 
+    <div v-else-if="isRestDay" class="countdown-section">
+        <div class="countdown-card rest-card">
+            <h2>Time to Recharge</h2>
+            <div class="timer">
+                {{ countdownTime }}
+            </div>
+            <p>You've earned your rest! Your next session starts in...</p>
+        </div>
+    </div>
+
     <template v-else>
         <div class="progress-section">
             <CircularProgress 
@@ -86,6 +96,7 @@ const progressPercentage = computed(() => {
 });
 
 const hasStarted = ref(true);
+const isRestDay = ref(false);
 const countdownTime = ref('00:00:00');
 let countdownInterval = null;
 
@@ -99,14 +110,32 @@ const subscription = liveQuery(async () => {
         .first();
 
     if (activeGoal) {
-        // Check if goal has started
-        const today = new Date().toISOString().split('T')[0];
-        if (activeGoal.start_date > today) {
+        const todayDateStr = new Date().toISOString().split('T')[0];
+        const start = new Date(activeGoal.start_date);
+        const today = new Date(todayDateStr);
+        const diffInTime = today.getTime() - start.getTime();
+        const diffInDays = Math.floor(diffInTime / (1000 * 3600 * 24));
+
+        if (diffInDays < 0) {
             hasStarted.value = false;
+            isRestDay.value = false;
             startCountdown(activeGoal.start_date);
         } else {
             hasStarted.value = true;
-            if (countdownInterval) clearInterval(countdownInterval);
+            const dayInCycle = diffInDays % 7;
+            const weeklyDays = activeGoal.weeklyDays || 7;
+            
+            if (dayInCycle >= weeklyDays) {
+                isRestDay.value = true;
+                // Next week starts at start_date + (weekIndex + 1) * 7
+                const weekIndex = Math.floor(diffInDays / 7);
+                const nextStart = new Date(start);
+                nextStart.setDate(start.getDate() + (weekIndex + 1) * 7);
+                startCountdown(nextStart.toISOString().split('T')[0]);
+            } else {
+                isRestDay.value = false;
+                if (countdownInterval) clearInterval(countdownInterval);
+            }
         }
     }
 
@@ -244,6 +273,10 @@ h1 {
     text-align: center;
     width: 100%;
     box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+}
+
+.countdown-card.rest-card {
+    background: #E8F4F8; /* Subtle blue for rest */
 }
 
 .countdown-card h2 {
