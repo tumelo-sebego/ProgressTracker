@@ -20,12 +20,22 @@
                 </div>
             </div>
 
-             <div class="form-group">
+             <div class="form-group" :class="{ 'disabled-field': duration < 7 }">
                 <label>How many days in a week will you be doing the Activities?</label>
                 <div class="slider-container">
-                    <input type="range" v-model="weeklyFrequency" min="1" max="7" class="custom-slider" />
-                    <span class="slider-value">{{ weeklyFrequency }} Day{{ weeklyFrequency > 1 ? 's' : '' }}</span>
+                    <input 
+                        type="range" 
+                        v-model="weeklyFrequency" 
+                        min="1" 
+                        max="7" 
+                        class="custom-slider" 
+                        :disabled="duration < 7"
+                    />
+                    <span class="slider-value">
+                        {{ duration < 7 ? 'Daily' : `${weeklyFrequency} Day${weeklyFrequency > 1 ? 's' : ''}` }}
+                    </span>
                 </div>
+                <p v-if="duration < 7" class="helper-text">Frequency is set to daily for goals shorter than a week.</p>
             </div>
 
             <div class="form-group">
@@ -62,11 +72,13 @@ const cancel = () => {
 };
 
 const nextStep = () => {
+    const finalFrequency = duration.value < 7 ? 'Daily' : (weeklyFrequency.value === 7 ? 'Daily' : `${weeklyFrequency.value} Days/Week`);
+    
     authStore.setGoalData({
         title: title.value,
         duration: parseInt(duration.value),
-        frequency: weeklyFrequency.value === 7 ? 'Daily' : `${weeklyFrequency.value} Days/Week`,
-        weeklyDays: parseInt(weeklyFrequency.value),
+        frequency: finalFrequency,
+        weeklyDays: duration.value < 7 ? 7 : parseInt(weeklyFrequency.value),
         startPreference: startPreference.value
     });
     router.push('/onboarding/activities');
@@ -152,6 +164,19 @@ label {
     font-size: 16px;
     color: #1a1a1a;
     box-sizing: border-box; /* Fix padding issues */
+}
+
+/* Disabled Field Styles */
+.disabled-field {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.helper-text {
+    font-size: 11px;
+    color: #888;
+    margin: 0;
+    font-style: italic;
 }
 
 /* Slider Styling */
