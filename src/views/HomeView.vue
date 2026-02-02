@@ -40,7 +40,7 @@
 
         <div class="activities-section">
             <ActivityCard
-                v-for="activity in activities"
+                v-for="activity in sortedActivities"
                 :key="activity.id"
                 :title="activity.title"
                 :points="activity.points"
@@ -93,6 +93,25 @@ const progressPercentage = computed(() => {
         .reduce((sum, item) => sum + item.points, 0);
     
     return totalPoints === 0 ? 0 : Math.round((donePoints / totalPoints) * 100);
+});
+
+const sortedActivities = computed(() => {
+    const statusOrder = { 'active': 0, 'pending': 1, 'done': 2 };
+    
+    return [...activities.value].sort((a, b) => {
+        // First sort by status order
+        const statusDiff = statusOrder[a.status] - statusOrder[b.status];
+        if (statusDiff !== 0) return statusDiff;
+        
+        // If both are 'done', sort by end_time in reverse (most recent first)
+        if (a.status === 'done') {
+            const timeA = a.end_time || 0;
+            const timeB = b.end_time || 0;
+            return timeB - timeA;
+        }
+        
+        return 0; // Maintain relative order for same status (pending/active)
+    });
 });
 
 const hasStarted = ref(true);
