@@ -18,29 +18,15 @@
 
     <!-- Right Section: Stats/Icon -->
     <div class="card-right">
-        <!-- DONE Status: Duration -->
-        <div v-if="status === 'done'" class="stat-box">
-            <span class="stat-value">{{ formattedDuration.value }}</span>
-            <span class="stat-unit">{{ formattedDuration.unit }}</span>
+        <!-- Stats Column -->
+        <div v-if="status !== 'active'" class="stat-box">
+             <span class="stat-value">{{ formattedDuration.value }}</span>
+             <span class="stat-unit">{{ formattedDuration.unit }}</span>
         </div>
-
-        <!-- PENDING Status: Points or Icon? User said 'points of that activity (if the activity is still pending)' but image showed icon for one pending. 
-             I will default to showing points if provided, else some indicator. -->
-        <div v-else-if="status === 'pending'" class="stat-box">
-             <span class="stat-value">{{ points }}</span>
-             <span class="stat-unit">pts</span>
-        </div>
-
+        
         <!-- ACTIVE Status: Pulsating Dot -->
-        <div v-else-if="status === 'active'" class="icon-box">
-             <PulsatingDot />
-        </div>
-
-        <!-- EXPIRED/Other: Stopwatch Icon -->
         <div v-else class="icon-box">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="stopwatch-icon">
-                <path d="M12 2c-4.97 0-9 4.03-9 9 0 4.97 4.03 9 9 9s9-4.03 9-9c0-4.97-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zm1-11h-2v1.17c-.31.11-.59.26-.84.45L9.41 7.89l-1.42 1.42 1.41 1.41.76-.76C10.55 10.32 11.23 10 12 10c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3c0-.36.07-.7.19-1.02l-1.42-1.42C8.32 11.75 8 13.06 8 14.5 8 16.98 10.02 19 12.5 19S17 16.98 17 14.5 14.98 10 12.5 10v-2.83zM15 1h-6v2h6V1z"/>
-            </svg>
+             <PulsatingDot />
         </div>
     </div>
   </div>
