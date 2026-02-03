@@ -20,8 +20,8 @@
     <div class="card-right">
         <!-- DONE Status: Duration -->
         <div v-if="status === 'done'" class="stat-box">
-            <span class="stat-value">{{ duration != null ? duration : points }}</span>
-            <span class="stat-unit">min</span>
+            <span class="stat-value">{{ formattedDuration.value }}</span>
+            <span class="stat-unit">{{ formattedDuration.unit }}</span>
         </div>
 
         <!-- PENDING Status: Points or Icon? User said 'points of that activity (if the activity is still pending)' but image showed icon for one pending. 
@@ -74,6 +74,24 @@ const handleClick = () => {
         emit('click');
     }
 };
+
+const formattedDuration = computed(() => {
+    // If duration is null, fallback to points (which is target duration)
+    const totalMinutes = props.duration != null ? props.duration : props.points;
+    
+    if (totalMinutes >= 60) {
+        const hours = Math.floor(totalMinutes / 60);
+        return {
+            value: hours,
+            unit: hours < 2 ? 'hr' : 'hrs'
+        };
+    }
+    
+    return {
+        value: totalMinutes,
+        unit: 'min'
+    };
+});
 </script>
 
 <style scoped>
