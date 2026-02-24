@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { db } from '../db/schema';
+import syncManager from '../db/syncManager';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user')) || null);
@@ -21,9 +22,25 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function signup(name, email, password) {
     try {
-      const userId = await db.users.add({ name, email, password });
+      const userId = await db.users.add({ name, email, password, _synced: false });
       user.value = { id: userId, name, email };
       localStorage.setItem('user', JSON.stringify(user.value));
+      
+      // Generate a mock JWT for local authentication
+      // Format: base64("userId:email")
+      const mockToken = btoa(`${userId}:${email}`);
+      localStorage.setItem('auth_token', mockToken);
+      
+      console.log('✅ Signup successful. Generated local auth token.');
+      
+      // Trigger sync after signup
+      console.log('📤 Triggering sync after signup...');
+      try {
+        await syncManager.syncNow();
+      } catch (error) {
+        console.warn('⚠️ Sync failed after signup (will retry in 60s):', error.message);
+      }
+      
       return true;
     } catch (error) {
       console.error("Signup failed", error);
@@ -37,6 +54,12 @@ export const useAuthStore = defineStore('auth', () => {
       if (foundUser && foundUser.password === password) {
         user.value = { id: foundUser.id, name: foundUser.name, email: foundUser.email };
         localStorage.setItem('user', JSON.stringify(user.value));
+        
+        // Generate a mock JWT for local authentication
+        const mockToken = btoa(`${foundUser.id}:${foundUser.email}`);
+        localStorage.setItem('auth_token', mockToken);
+        
+        console.log('✅ Login successful. Generated local auth token.');
         return true;
       }
       return false;
@@ -49,6 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     user.value = null;
     localStorage.removeItem('user');
+    localStorage.removeItem('auth_token');
     onboardingData.value = { goal: { title: '', duration: 1, frequency: '1 Day/Week', weeklyDays: 1, startPreference: 'Today', customStartDate: '' }, activities: [] };
   }
 
@@ -85,7 +109,7 @@ export const useAuthStore = defineStore('auth', () => {
         const startDateStr = getLocalDateString(startDate);
         const endDateStr = getLocalDateString(endDate);
 
-        // Save Goal
+        // Save Goal with sync metadata for new data
         const goalId = await db.goals.add({
             userId: user.value.id,
             title: onboardingData.value.goal.title,
@@ -95,10 +119,14 @@ export const useAuthStore = defineStore('auth', () => {
             status: 'active',
             start_date: startDateStr,
             end_date: endDateStr,
-            createdAt: new Date()
+            createdAt: new Date(),
+            _synced: false,  // Mark as unsynced - new data
+            _syncedAt: null,
+            _rev: 1,
+            _id: null
         });
 
-        // Save Activities
+        // Save Activities with sync metadata for new data
         // Tag activities with the actual start date for the first set
         const activitiesStartDate = startDateStr;
         const activitiesToSave = onboardingData.value.activities.map(act => ({
@@ -107,13 +135,26 @@ export const useAuthStore = defineStore('auth', () => {
             title: act.title,
             points: act.points,
             status: 'pending',
-            date: activitiesStartDate
+            date: activitiesStartDate,
+            _synced: false,  // Mark as unsynced - new data
+            _syncedAt: null,
+            _rev: 1,
+            _id: null
         }));
         
         await db.activities.bulkAdd(activitiesToSave);
 
         // Reset Onboarding Data
         onboardingData.value = { goal: { title: '', duration: 1, frequency: '1 Day/Week', weeklyDays: 1, startPreference: 'Today', customStartDate: '' }, activities: [] };
+        
+        // Trigger sync after onboarding
+        console.log('📤 Triggering sync after onboarding...');
+        try {
+          await syncManager.syncNow();
+          console.log('✅ Onboarding data synced to MongoDB');
+        } catch (error) {
+          console.warn('⚠️ Sync failed after onboarding (will retry in 60s):', error.message);
+        }
         
         return true;
     } catch (error) {

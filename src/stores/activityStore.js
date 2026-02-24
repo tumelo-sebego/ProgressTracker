@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { db } from '../db/schema';
 import { liveQuery } from 'dexie';
 import { useAuthStore } from './authStore';
+import syncManager from '../db/syncManager';
 
 export const useActivityStore = defineStore('activity', () => {
     const currentActivity = ref(null);
@@ -60,11 +61,17 @@ export const useActivityStore = defineStore('activity', () => {
         await db.activities.update(id, {
             status: 'active',
             startTime: now,
-            start_time: now
+            start_time: now,
+            _synced: false  // Mark for sync
         });
         
         const updated = await db.activities.get(id);
         currentActivity.value = updated;
+        
+        // Trigger sync
+        syncManager.syncNow().catch(err => {
+            console.log('Background sync will retry in 60s', err);
+        });
     }
 
     async function finishActivity() {
@@ -87,11 +94,17 @@ export const useActivityStore = defineStore('activity', () => {
             status: 'done',
             startTime: null,
             end_time: now,
-            duration: durationVal
+            duration: durationVal,
+            _synced: false  // Mark for sync
         });
 
         const updated = await db.activities.get(id);
         currentActivity.value = updated;
+        
+        // Trigger sync
+        syncManager.syncNow().catch(err => {
+            console.log('Background sync will retry in 60s', err);
+        });
     }
 
     async function checkAndResetDaily() {

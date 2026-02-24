@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  functions = "netlify/functions"
+  publish = "dist"
+
+[env.production]
+  [env.production.environment]
+    VITE_API_URL = "https://yoursite.netlify.app/.netlify/functions"
+    # Add MONGODB_URI and JWT_SECRET in Netlify UI under Build & Deploy > Environment
+
+[env.development]
+  [env.development.environment]
+    VITE_API_URL = "http://localhost:8888/.netlify/functions"
+    # Add MONGODB_URI and JWT_SECRET in .env.local file
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

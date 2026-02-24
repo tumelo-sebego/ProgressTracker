@@ -7,23 +7,60 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# node_modules
+# Dependencies
 node_modules
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
 dist
 dist-ssr
+build
 *.local
+
+# Vite cache
+.vite
+vite.config.js.timestamp-*
+
+# PWA
+dev-dist
+public/sw.js
+public/workbox-*.js
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.iml
 
-# PWA
-public/sw.js
-public/workbox-*.js
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE settings
+.vscode/settings.json
+.vscode/launch.json
+.netlify
+
+# OS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+
+# Netlify dev

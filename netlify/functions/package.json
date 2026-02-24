@@ -1,0 +1,10 @@
+{
+  "name": "progress-tracker-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for ProgressTracker",
+  "type": "module",
+  "dependencies": {
+    "mongodb": "^6.0.0",
+    "jsonwebtoken": "^9.0.0"
+  }
+}
